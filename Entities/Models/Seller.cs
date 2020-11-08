@@ -10,6 +10,7 @@ namespace Entities.Models
             CustomerOrderProduct = new HashSet<CustomerOrderProduct>();
             Product = new HashSet<Product>();
             SellerAddress = new HashSet<SellerAddress>();
+            SellerDocument = new HashSet<SellerDocument>();
             SellerStatusLog = new HashSet<SellerStatusLog>();
         }
 
@@ -20,7 +21,10 @@ namespace Entities.Models
         public string Name { get; set; }
         public string Fname { get; set; }
         public long? MelliCode { get; set; }
+        public long? Tel { get; set; }
         public long? Mobile { get; set; }
+        public long? SecondMobile { get; set; }
+        public string ShabaNo { get; set; }
         public long? Bdate { get; set; }
         public string Email { get; set; }
         public string ProfileImageUrl { get; set; }
@@ -46,6 +50,7 @@ namespace Entities.Models
         public virtual ICollection<CustomerOrderProduct> CustomerOrderProduct { get; set; }
         public virtual ICollection<Product> Product { get; set; }
         public virtual ICollection<SellerAddress> SellerAddress { get; set; }
+        public virtual ICollection<SellerDocument> SellerDocument { get; set; }
         public virtual ICollection<SellerStatusLog> SellerStatusLog { get; set; }
     }
 }

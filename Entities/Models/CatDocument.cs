@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace HandCarftBaseServer.Models
+namespace Entities.Models
 {
-    public partial class CatApi
+    public partial class CatDocument
     {
-        public CatApi()
+        public CatDocument()
         {
-            Api = new HashSet<Api>();
+            Document = new HashSet<Document>();
         }
 
         public long Id { get; set; }
-        public long? SystemsId { get; set; }
-        public string Name { get; set; }
-        public long? Rkey { get; set; }
+        public string Title { get; set; }
+        public int? Rkey { get; set; }
         public long? CuserId { get; set; }
         public long? Cdate { get; set; }
         public long? DuserId { get; set; }
@@ -23,7 +22,6 @@ namespace HandCarftBaseServer.Models
         public long? DaUserId { get; set; }
         public long? DaDate { get; set; }
 
-        public virtual Systems Systems { get; set; }
-        public virtual ICollection<Api> Api { get; set; }
+        public virtual ICollection<Document> Document { get; set; }
     }
 }

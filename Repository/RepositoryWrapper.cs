@@ -60,7 +60,9 @@ namespace Repository
         private IGetPostCityRepository _postCity;
         private ICustomerOrderProductRepository _customerOrderProduct;
         private IProductPackingTypeImageRepository _productPackingTypeImage;
-
+        private ICatDocumentRepositry _catDocument;
+        private IDocumentRepository _document;
+        private ISellerDocumentRepository _sellerDocument;
 
 
         public IApiRepository Api => _api ??= new ApiRepository(_repoContext);
@@ -114,6 +116,9 @@ namespace Repository
         public IGetPostCityRepository PostCity => _postCity ??= new GetPostCityRepository(_repoContext);
         public ICustomerOrderProductRepository CustomerOrderProduct => _customerOrderProduct ??= new CustomerOrderProductRepository(_repoContext);
         public IProductPackingTypeImageRepository ProductPackingTypeImage => _productPackingTypeImage ??= new ProductPackingTypeImageRepository(_repoContext);
+        public ICatDocumentRepositry CatDocument => _catDocument ??= new CatDocumentRepositry(_repoContext);
+        public IDocumentRepository Document => _document ??= new DocumentRepository(_repoContext);
+        public ISellerDocumentRepository SellerDocument => _sellerDocument ??= new SellerDocumentRepository(_repoContext);
         public RepositoryWrapper(BaseContext repositoryContext)
         {
             _repoContext = repositoryContext;

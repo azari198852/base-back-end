@@ -1,15 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace HandCarftBaseServer.Models
+namespace Entities.Models
 {
-    public partial class ProductPackingTypeImage
+    public partial class Document
     {
+        public Document()
+        {
+            SellerDocument = new HashSet<SellerDocument>();
+        }
+
         public long Id { get; set; }
-        public long? ProductPackingTypeId { get; set; }
+        public long? CatDocumentId { get; set; }
         public string Title { get; set; }
-        public string Decription { get; set; }
-        public string ImageFileUrl { get; set; }
+        public bool? IsRequired { get; set; }
         public long? CuserId { get; set; }
         public long? Cdate { get; set; }
         public long? DuserId { get; set; }
@@ -19,6 +23,7 @@ namespace HandCarftBaseServer.Models
         public long? DaUserId { get; set; }
         public long? DaDate { get; set; }
 
-        public virtual ProductPackingType ProductPackingType { get; set; }
+        public virtual CatDocument CatDocument { get; set; }
+        public virtual ICollection<SellerDocument> SellerDocument { get; set; }
     }
 }

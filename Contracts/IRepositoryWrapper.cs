@@ -58,6 +58,9 @@ namespace Contracts
         IGetPostCityRepository PostCity { get; }
         ICustomerOrderProductRepository CustomerOrderProduct { get; }
         IProductPackingTypeImageRepository ProductPackingTypeImage { get; }
+        ICatDocumentRepositry CatDocument { get; }
+        IDocumentRepository Document { get; }
+        ISellerDocumentRepository SellerDocument { get; }
 
         void Save();
     }

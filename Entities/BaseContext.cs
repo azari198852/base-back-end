@@ -18,6 +18,7 @@ namespace Entities
 
         public virtual DbSet<Api> Api { get; set; }
         public virtual DbSet<CatApi> CatApi { get; set; }
+        public virtual DbSet<CatDocument> CatDocument { get; set; }
         public virtual DbSet<CatFrom> CatFrom { get; set; }
         public virtual DbSet<CatProduct> CatProduct { get; set; }
         public virtual DbSet<CatProductLanguage> CatProductLanguage { get; set; }
@@ -34,6 +35,7 @@ namespace Entities
         public virtual DbSet<CustomerOrderProductStatusLog> CustomerOrderProductStatusLog { get; set; }
         public virtual DbSet<CustomerOrderStatusLog> CustomerOrderStatusLog { get; set; }
         public virtual DbSet<CustomerStatusLog> CustomerStatusLog { get; set; }
+        public virtual DbSet<Document> Document { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<FamousComments> FamousComments { get; set; }
         public virtual DbSet<Forms> Forms { get; set; }
@@ -72,6 +74,7 @@ namespace Entities
         public virtual DbSet<RoleFormsApi> RoleFormsApi { get; set; }
         public virtual DbSet<Seller> Seller { get; set; }
         public virtual DbSet<SellerAddress> SellerAddress { get; set; }
+        public virtual DbSet<SellerDocument> SellerDocument { get; set; }
         public virtual DbSet<SellerStatusLog> SellerStatusLog { get; set; }
         public virtual DbSet<Slider> Slider { get; set; }
         public virtual DbSet<SliderPlace> SliderPlace { get; set; }
@@ -87,7 +90,7 @@ namespace Entities
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            
+
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -163,6 +166,31 @@ namespace Entities
                     .WithMany(p => p.CatApi)
                     .HasForeignKey(d => d.SystemsId)
                     .HasConstraintName("FK_CatAPI_Systems");
+            });
+
+            modelBuilder.Entity<CatDocument>(entity =>
+            {
+                entity.HasIndex(e => e.Rkey)
+                    .HasName("IX_CatDocument")
+                    .IsUnique();
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.Cdate).HasColumnName("CDate");
+
+                entity.Property(e => e.CuserId).HasColumnName("CUserID");
+
+                entity.Property(e => e.DaUserId).HasColumnName("DaUserID");
+
+                entity.Property(e => e.Ddate).HasColumnName("DDate");
+
+                entity.Property(e => e.DuserId).HasColumnName("DUserID");
+
+                entity.Property(e => e.Mdate).HasColumnName("MDate");
+
+                entity.Property(e => e.MuserId).HasColumnName("MUserID");
+
+                entity.Property(e => e.Title).HasMaxLength(128);
             });
 
             modelBuilder.Entity<CatFrom>(entity =>
@@ -905,6 +933,34 @@ namespace Entities
                     .HasConstraintName("FK_CustomerStatusLog_Status");
             });
 
+            modelBuilder.Entity<Document>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.CatDocumentId).HasColumnName("CatDocumentID");
+
+                entity.Property(e => e.Cdate).HasColumnName("CDate");
+
+                entity.Property(e => e.CuserId).HasColumnName("CUserID");
+
+                entity.Property(e => e.DaUserId).HasColumnName("DaUserID");
+
+                entity.Property(e => e.Ddate).HasColumnName("DDate");
+
+                entity.Property(e => e.DuserId).HasColumnName("DUserID");
+
+                entity.Property(e => e.Mdate).HasColumnName("MDate");
+
+                entity.Property(e => e.MuserId).HasColumnName("MUserID");
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.CatDocument)
+                    .WithMany(p => p.Document)
+                    .HasForeignKey(d => d.CatDocumentId)
+                    .HasConstraintName("FK_Document_CatDocument");
+            });
+
             modelBuilder.Entity<Employee>(entity =>
             {
                 entity.Property(e => e.Id).HasColumnName("ID");
@@ -1457,6 +1513,8 @@ namespace Entities
                     .HasColumnName("AparatURL")
                     .HasMaxLength(512);
 
+                entity.Property(e => e.AuthorName).HasMaxLength(512);
+
                 entity.Property(e => e.CatProductId).HasColumnName("CatProductID");
 
                 entity.Property(e => e.Cdate).HasColumnName("CDate");
@@ -1475,6 +1533,8 @@ namespace Entities
 
                 entity.Property(e => e.Ddate).HasColumnName("DDate");
 
+                entity.Property(e => e.DownloadLink).HasMaxLength(512);
+
                 entity.Property(e => e.DuserId).HasColumnName("DUserID");
 
                 entity.Property(e => e.EnName).HasMaxLength(256);
@@ -1484,6 +1544,10 @@ namespace Entities
                 entity.Property(e => e.KeyWords).HasMaxLength(2048);
 
                 entity.Property(e => e.Mdate).HasColumnName("MDate");
+
+                entity.Property(e => e.MetaDescription).HasMaxLength(2048);
+
+                entity.Property(e => e.MetaTitle).HasMaxLength(1024);
 
                 entity.Property(e => e.MuserId).HasColumnName("MUserID");
 
@@ -2096,6 +2160,8 @@ namespace Entities
                 entity.Property(e => e.RealOrLegal).HasComment(@"1 = hagigi
 2 = hogogi");
 
+                entity.Property(e => e.ShabaNo).HasMaxLength(128);
+
                 entity.Property(e => e.UserId).HasColumnName("UserID");
 
                 entity.HasOne(d => d.FinalStatus)
@@ -2159,6 +2225,47 @@ namespace Entities
                     .WithMany(p => p.SellerAddress)
                     .HasForeignKey(d => d.SellerId)
                     .HasConstraintName("FK_SellerAddress_Seller");
+            });
+
+            modelBuilder.Entity<SellerDocument>(entity =>
+            {
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.AdminDescription).HasMaxLength(2048);
+
+                entity.Property(e => e.Cdate).HasColumnName("CDate");
+
+                entity.Property(e => e.CuserId).HasColumnName("CUserID");
+
+                entity.Property(e => e.DaUserId).HasColumnName("DaUserID");
+
+                entity.Property(e => e.Ddate).HasColumnName("DDate");
+
+                entity.Property(e => e.DocumentId).HasColumnName("DocumentID");
+
+                entity.Property(e => e.DuserId).HasColumnName("DUserID");
+
+                entity.Property(e => e.FianlStatusId).HasColumnName("FianlStatusID");
+
+                entity.Property(e => e.FileUrl)
+                    .HasColumnName("FileURL")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.Mdate).HasColumnName("MDate");
+
+                entity.Property(e => e.MuserId).HasColumnName("MUserID");
+
+                entity.Property(e => e.SellerId).HasColumnName("SellerID");
+
+                entity.HasOne(d => d.Document)
+                    .WithMany(p => p.SellerDocument)
+                    .HasForeignKey(d => d.DocumentId)
+                    .HasConstraintName("FK_SellerDocument_Document");
+
+                entity.HasOne(d => d.Seller)
+                    .WithMany(p => p.SellerDocument)
+                    .HasForeignKey(d => d.SellerId)
+                    .HasConstraintName("FK_SellerDocument_Seller");
             });
 
             modelBuilder.Entity<SellerStatusLog>(entity =>

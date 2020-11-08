@@ -122,6 +122,9 @@ namespace HandCarftBaseServer.Controllers
         }
 
 
+
+        #region UI_Methods
+
         /// <summary>
         ///ورود / ثبت نام مشتری به سیستم 
         /// </summary>
@@ -334,74 +337,50 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
-        ///// <summary>
-        /////دریافت شماره موبایل برای بررسی موجود بودن در سامانه
-        ///// </summary>
-        //[HttpPost]
-        //[Route("Account/CustomerRegister_UI")]
-        //public LongResult CustomerRegister_UI(long mobileNo)
-        //{
-        //    try
-        //    {
+        [HttpGet]
+        [Route("Account/CustomerLogin_ForgetPass")]
+        public VoidResult CustomerLogin_ForgetPass(string email, long? mobileNo)
+        {
 
-        //        if (_repository.Users.FindByCondition(c => c.Username == mobileNo.ToString()).Any())
-        //            return LongResult.GetSingleSuccessfulResult(-1);
+            try
+            {
 
-        //        Users _user = new Users
-        //        {
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).FirstOrDefault();
+                if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+
+                var _random = new Random();
+                var code = _random.Next(1000, 9999);
+                user.Hpassword = code.ToString();
+
+                if (mobileNo != null)
+                {
+
+                    var sms = new SendSMS();
+                    sms.SendRestPassSms(mobileNo.Value, code);
+
+                }
+                else
+                {
+
+                    SendEmail em = new SendEmail();
+                    em.SendResetPassEmail(email, code);
+
+                }
+                _repository.Save();
+                //create claims details based on the user information
+
+                return VoidResult.GetSuccessResult("کلمه عبور جدید با موفقیت ارسال شد");
+
+            }
+            catch (Exception e)
+            {
+                return VoidResult.GetFailResult(e.Message);
+            }
 
 
+        }
 
-        //            Mobile = mobileNo,
-        //            Username = mobileNo.ToString(),
-        //            Cdate = DateTime.Now.Ticks,
-
-        //        };
-        //        _user.UserRole.Add(new UserRole { Role = 2, Cdate = DateTime.Now.Ticks });
-        //        _user.Customer.Add(new Customer
-        //        {
-
-
-        //            Mobile = mobileNo,
-        //            Cdate = DateTime.Now.Ticks,
-
-
-        //        });
-        //        _repository.Users.Create(_user);
-        //        _repository.Save();
-        //        return LongResult.GetSingleSuccessfulResult(_user.Id);
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        return LongResult.GetFailResult(null);
-        //    }
-        //}
-
-        ///// <summary>
-        /////دریافت پسورد جهت آپدیت و تکمیال ثبت نام
-        ///// </summary>
-        //[HttpPost]
-        //[Route("Account/CustomerRegister_GetPassword_UI")]
-        //public LongResult CustomerRegister_GetPassword_UI(long userId, long mobileNo, string password)
-        //{
-        //    try
-        //    {
-
-        //        var _user = _repository.Users.FindByCondition(c => c.Id == userId && c.Username == mobileNo.ToString()).FirstOrDefault();
-        //        if (_user == null)
-        //            return LongResult.GetFailResult("اطلاعات ورودی صحیح نمی باشد");
-
-        //        _user.Hpassword = password;
-        //        _repository.Users.Update(_user);
-        //        _repository.Save();
-        //        return LongResult.GetSingleSuccessfulResult(_user.Id);
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        return LongResult.GetFailResult(null);
-        //    }
-        //}
-
+        #endregion
 
         /// <summary>
         ///ورود / ثبت نام صنعتگر به سیستم 
@@ -616,7 +595,48 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
+        [HttpGet]
+        [Route("Account/SellerLogin_ForgetPass")]
+        public VoidResult SellerLogin_ForgetPass(string email, long? mobileNo)
+        {
 
+            try
+            {
+
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).FirstOrDefault();
+                if (user == null || user.UserRole.All(c => c.Role != 3)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+
+                var _random = new Random();
+                var code = _random.Next(1000, 9999);
+                user.Hpassword = code.ToString();
+
+                if (mobileNo != null)
+                {
+
+                    var sms = new SendSMS();
+                    sms.SendRestPassSms(mobileNo.Value, code);
+
+                }
+                else
+                {
+
+                    SendEmail em = new SendEmail();
+                    em.SendResetPassEmail(email, code);
+
+                }
+                _repository.Save();
+                //create claims details based on the user information
+
+                return VoidResult.GetSuccessResult("کلمه عبور جدید با موفقیت ارسال شد");
+
+            }
+            catch (Exception e)
+            {
+                return VoidResult.GetFailResult(e.Message);
+            }
+
+
+        }
     }
 }
 

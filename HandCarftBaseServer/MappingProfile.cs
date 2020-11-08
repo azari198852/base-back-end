@@ -286,6 +286,14 @@ namespace HandCarftBaseServer
 
             #endregion
 
+            #region Document
+
+            CreateMap<Document, DocumentDto>()
+               .ForMember(u => u.CatDocumentName,
+                   opt => opt.MapFrom(x => x.CatDocument.Title));
+            CreateMap<DocumentDto, Document>();
+            #endregion
+
         }
     }
 }

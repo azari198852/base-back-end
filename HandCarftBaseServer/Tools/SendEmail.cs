@@ -145,5 +145,48 @@ namespace HandCarftBaseServer.Tools
 
         }
 
+        public void SendResetPassEmail(string emaill, long code)
+        {
+
+            // create email message
+            var email = new MimeMessage();
+            email.Sender = MailboxAddress.Parse(emaill);
+            email.To.Add(MailboxAddress.Parse(emaill));
+
+            email.Subject = "بازیابی رمز عبور";
+            var body = " رمز عبور جدید شما برای ورود به ";
+            body += "tabrizhandicrafts.com";
+            body += System.Environment.NewLine;
+            body += "";
+            body += code.ToString();
+            body += " می باشد.";
+            email.Body = new TextPart(TextFormat.Text) { Text = body };
+            try
+            {
+                using var smtp = new MailKit.Net.Smtp.SmtpClient();
+
+                smtp.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
+
+                // hotmail
+                //smtp.Connect("smtp.live.com", 587, SecureSocketOptions.StartTls);
+
+                // office 365
+                //smtp.Connect("smtp.office365.com", 587, SecureSocketOptions.StartTls);
+                smtp.Authenticate("sahand.farshbaf@gmail.com", "sa19881213");
+                smtp.Send(email);
+                smtp.Disconnect(true);
+
+
+            }
+            catch (Exception ex)
+            {
+
+
+            }
+            // send email
+
+        }
+
+
     }
 }

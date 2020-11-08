@@ -894,3 +894,63 @@ Error Number:53,State:0,Class:20
 2020-11-07 11:57:23.7641 Info NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 4.7.5.12092. Product version: 4.7.5+ed343d5690d9c97a96fcff430e240e2d7c31a8d7. GlobalAssemblyCache: False
 2020-11-07 11:57:23.8266 Info AppDomain Shutting down. Logger closing...
 2020-11-07 11:57:23.8394 Info Logger has been shut down.
+2020-11-09 00:19:58.3363 Info Message Template Auto Format enabled
+2020-11-09 00:19:59.1098 Info Loading assembly: NLog.Web.AspNetCore
+2020-11-09 00:19:59.4120 Info Adding target DatabaseTarget(Name=db)
+2020-11-09 00:20:00.0230 Info Validating config: TargetNames=db, ConfigItems=33, FilePath=C:\Users\Sa\source\repos\azari198852\base-back-end\HandCarftBaseServer\bin\Debug\netcoreapp3.1\nlog.config
+2020-11-09 00:20:22.2347 Error DatabaseTarget(Name=db): Error when writing to database. Exception: System.InvalidOperationException: The ConnectionString property has not been initialized.
+   at Microsoft.Data.SqlClient.SqlConnection.PermissionDemand()
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.PermissionDemand(DbConnection outerConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at NLog.Targets.DatabaseTarget.OpenConnection(String connectionString, LogEventInfo logEventInfo)
+   at NLog.Targets.DatabaseTarget.EnsureConnectionOpen(String connectionString, LogEventInfo logEventInfo)
+   at NLog.Targets.DatabaseTarget.WriteLogEventToDatabase(LogEventInfo logEvent, String connectionString)
+2020-11-09 00:24:55.2069 Info Message Template Auto Format enabled
+2020-11-09 00:24:55.4201 Info Loading assembly: NLog.Web.AspNetCore
+2020-11-09 00:24:55.6856 Info Adding target DatabaseTarget(Name=db)
+2020-11-09 00:24:55.8624 Info Validating config: TargetNames=db, ConfigItems=33, FilePath=C:\Users\Sa\source\repos\azari198852\base-back-end\HandCarftBaseServer\bin\Debug\netcoreapp3.1\nlog.config
+2020-11-09 00:24:59.1360 Error DatabaseTarget(Name=db): Error when writing to database. Exception: System.InvalidOperationException: The ConnectionString property has not been initialized.
+   at Microsoft.Data.SqlClient.SqlConnection.PermissionDemand()
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.PermissionDemand(DbConnection outerConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at NLog.Targets.DatabaseTarget.OpenConnection(String connectionString, LogEventInfo logEventInfo)
+   at NLog.Targets.DatabaseTarget.EnsureConnectionOpen(String connectionString, LogEventInfo logEventInfo)
+   at NLog.Targets.DatabaseTarget.WriteLogEventToDatabase(LogEventInfo logEvent, String connectionString)
+2020-11-09 00:27:41.5523 Info Message Template Auto Format enabled
+2020-11-09 00:27:42.2418 Info Loading assembly: NLog.Web.AspNetCore
+2020-11-09 00:27:42.5454 Info Adding target DatabaseTarget(Name=db)
+2020-11-09 00:27:44.2979 Info Validating config: TargetNames=db, ConfigItems=33, FilePath=C:\Users\Sa\source\repos\azari198852\base-back-end\HandCarftBaseServer\bin\Debug\netcoreapp3.1\nlog.config
+2020-11-09 00:27:49.7386 Error DatabaseTarget(Name=db): Error when writing to database. Exception: System.InvalidOperationException: The ConnectionString property has not been initialized.
+   at Microsoft.Data.SqlClient.SqlConnection.PermissionDemand()
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.PermissionDemand(DbConnection outerConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at NLog.Targets.DatabaseTarget.OpenConnection(String connectionString, LogEventInfo logEventInfo)
+   at NLog.Targets.DatabaseTarget.EnsureConnectionOpen(String connectionString, LogEventInfo logEventInfo)
+   at NLog.Targets.DatabaseTarget.WriteLogEventToDatabase(LogEventInfo logEvent, String connectionString)
+2020-11-09 00:29:30.5896 Info Message Template Auto Format enabled
+2020-11-09 00:29:30.6940 Info Loading assembly: NLog.Web.AspNetCore
+2020-11-09 00:29:30.8744 Info Adding target DatabaseTarget(Name=db)
+2020-11-09 00:29:31.0617 Info Validating config: TargetNames=db, ConfigItems=33, FilePath=C:\Users\Sa\source\repos\azari198852\base-back-end\HandCarftBaseServer\bin\Debug\netcoreapp3.1\nlog.config
+2020-11-09 00:29:33.5455 Error DatabaseTarget(Name=db): Error when writing to database. Exception: System.InvalidOperationException: The ConnectionString property has not been initialized.
+   at Microsoft.Data.SqlClient.SqlConnection.PermissionDemand()
+   at Microsoft.Data.SqlClient.SqlConnectionFactory.PermissionDemand(DbConnection outerConnection)
+   at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+   at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open(SqlConnectionOverrides overrides)
+   at Microsoft.Data.SqlClient.SqlConnection.Open()
+   at NLog.Targets.DatabaseTarget.OpenConnection(String connectionString, LogEventInfo logEventInfo)
+   at NLog.Targets.DatabaseTarget.EnsureConnectionOpen(String connectionString, LogEventInfo logEventInfo)
+   at NLog.Targets.DatabaseTarget.WriteLogEventToDatabase(LogEventInfo logEvent, String connectionString)

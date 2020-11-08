@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace HandCarftBaseServer.Models
+namespace Entities.Models
 {
-    public partial class PaymentTypeLocation
+    public partial class SellerDocument
     {
         public long Id { get; set; }
-        public long? PaymentTypeId { get; set; }
-        public long? LocationId { get; set; }
+        public long? SellerId { get; set; }
+        public long? DocumentId { get; set; }
+        public string FileUrl { get; set; }
+        public long? FianlStatusId { get; set; }
+        public string AdminDescription { get; set; }
         public long? CuserId { get; set; }
         public long? Cdate { get; set; }
         public long? DuserId { get; set; }
@@ -17,7 +20,7 @@ namespace HandCarftBaseServer.Models
         public long? DaUserId { get; set; }
         public long? DaDate { get; set; }
 
-        public virtual Location Location { get; set; }
-        public virtual PaymentType PaymentType { get; set; }
+        public virtual Document Document { get; set; }
+        public virtual Seller Seller { get; set; }
     }
 }
