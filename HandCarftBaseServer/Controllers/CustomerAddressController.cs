@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HandCarftBaseServer.Controllers
 {
@@ -21,11 +22,13 @@ namespace HandCarftBaseServer.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repository;
+        private readonly ILogger<CustomerAddressController> _logger;
 
-        public CustomerAddressController(IMapper mapper, IRepositoryWrapper repository)
+        public CustomerAddressController(IMapper mapper, IRepositoryWrapper repository, ILogger<CustomerAddressController> logger)
         {
             _mapper = mapper;
             _repository = repository;
+            _logger = logger;
         }
 
         /// <summary>
@@ -50,6 +53,7 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e, e.Message);
 
 
                 return SingleResult<CustomerAddressDto>.GetFailResult(e.Message);
