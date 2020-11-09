@@ -36,6 +36,34 @@ namespace HandCarftBaseServer.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
+        [Route("Order/GetOrderList")]
+        public IActionResult GetOrderList()
+        {
+
+            try
+            {
+                var res = _repository.CustomerOrder.FindByCondition(c => c.Ddate == null && c.DaDate == null)
+                      .Include(c => c.Customer)
+                      .Include(c => c.FinalStatus).Select(c => new
+                      {
+                          c.Id,
+                          OrderDate = DateTimeFunc.TimeTickToShamsi(c.OrderDate.Value),
+                          c.OrderNo,
+                          OrderType = c.OrderType == 1 ? "خرید" : "سفارش",
+                          CustomerName = c.Customer.Name + " " + c.Customer.Fname,
+                          c.FinalPrice,
+                          Status = c.FinalStatus.Name
+
+                      }).OrderByDescending(c => c.Id).ToList();
+                return Ok(res);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
         #region UI_Methods
 
         /// <summary>
