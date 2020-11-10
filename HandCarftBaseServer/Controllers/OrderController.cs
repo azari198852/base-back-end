@@ -37,6 +37,25 @@ namespace HandCarftBaseServer.Controllers
         }
 
         [HttpGet]
+        [Route("Order/GetOrderStatusList")]
+        public IActionResult GetOrderStatusList()
+        {
+            try
+            {
+                var res = _repository.Status
+                    .FindByCondition(c => c.CatStatus.Tables.Any(x => x.Name == "CustomerOrder"))
+                    .Select(c => new { c.Id, c.Name }).ToList();
+                return Ok(res);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return BadRequest(e.Message);
+            }
+        }
+
+
+        [HttpGet]
         [Route("Order/GetOrderList")]
         public IActionResult GetOrderList()
         {
@@ -45,7 +64,9 @@ namespace HandCarftBaseServer.Controllers
             {
                 var res = _repository.CustomerOrder.FindByCondition(c => c.Ddate == null && c.DaDate == null)
                       .Include(c => c.Customer)
-                      .Include(c => c.FinalStatus).Select(c => new
+                      .Include(c => c.FinalStatus)
+                      .Include(c => c.CustomerOrderProduct)
+                      .Select(c => new
                       {
                           c.Id,
                           OrderDate = DateTimeFunc.TimeTickToShamsi(c.OrderDate.Value),
@@ -53,16 +74,128 @@ namespace HandCarftBaseServer.Controllers
                           OrderType = c.OrderType == 1 ? "خرید" : "سفارش",
                           CustomerName = c.Customer.Name + " " + c.Customer.Fname,
                           c.FinalPrice,
-                          Status = c.FinalStatus.Name
-
+                          Status = c.FinalStatus.Name,
+                          Editable = c.CustomerOrderProduct.All(x => x.FinalStatusId == 23)
                       }).OrderByDescending(c => c.Id).ToList();
                 return Ok(res);
             }
             catch (Exception e)
             {
+                _logger.LogError(e, e.Message);
                 return BadRequest(e.Message);
             }
         }
+
+        [HttpGet]
+        [Route("Order/GetOrderFullInfoById")]
+        public IActionResult GetOrderFullInfoById(long orderId)
+        {
+
+            try
+            {
+                var orderproduct = _repository.CustomerOrderProduct.FindByCondition(c => c.CustomerOrderId == orderId)
+                    .Include(c => c.Product)
+                    .Include(c => c.Seller)
+                    .Include(c => c.FinalStatus)
+                    .Include(c => c.PackingType)
+                    .Select(c => new
+                    {
+                        c.Id,
+                        ProductName = c.Product.Name,
+                        c.ProductCode,
+                        c.ProductPrice,
+                        PackingType = c.PackingType.Name,
+                        c.OrderCount,
+                        Status = c.FinalStatus.Name,
+                        Seller = c.Seller.Name + " " + c.Seller.Fname,
+
+                    }).ToList();
+
+                var order = _repository.CustomerOrder.FindByCondition(c => c.Ddate == null && c.DaDate == null && c.Id == orderId)
+                    .Include(c => c.Customer)
+                    .Include(c => c.FinalStatus)
+                    .Include(c => c.CustomerAddress).ThenInclude(c => c.Province)
+                    .Include(c => c.CustomerAddress).ThenInclude(c => c.City)
+                    .Include(c => c.CustomerOrderPayment).ThenInclude(c => c.FinalStatus)
+                    .Select(c => new
+                    {
+
+                        OrderDate = DateTimeFunc.TimeTickToShamsi(c.OrderDate.Value),
+                        c.OrderNo,
+                        OrderType = c.OrderType == 1 ? "خرید" : "سفارش",
+                        CustomerName = c.Customer.Name + " " + c.Customer.Fname,
+                        c.Customer.Mobile,
+                        c.FinalPrice,
+                        c.FinalWeight,
+                        c.PackingWeight,
+                        Status = c.FinalStatus.Name,
+                        PaymentStatus = c.CustomerOrderPayment.OrderByDescending(x => x.Id)
+                            .Select(x => x.FinalStatus.Name).FirstOrDefault(),
+                        Address = c.CustomerAddress.Province.Name + " - " + c.CustomerAddress.City.Name + " - " +
+                                  c.CustomerAddress.Titel
+
+                    }).FirstOrDefault();
+                var result = new { Order = order, Orderproduct = orderproduct };
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return BadRequest(e.Message);
+            }
+        }
+
+        [Authorize]
+        [HttpPut]
+        [Route("Order/UpdateOrderStatus")]
+        public IActionResult UpdateOrderStatus(long orderId, int statusId, long? sentDate, string trackingCode, long? deliverDate)
+        {
+
+            try
+            {
+                var order = _repository.CustomerOrder.FindByCondition(c => c.Id == orderId).FirstOrDefault();
+                if (order == null) return BadRequest("سفارش یافت نشد.");
+
+
+                var UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+                if (statusId == 20)
+                {
+                    order.PostTrackingCode = trackingCode;
+                    order.SendDate = UnixEpoch.AddMilliseconds((double)sentDate.Value).Ticks;
+                }
+                else if (statusId == 21)
+                {
+                    order.DeliveryDate = UnixEpoch.AddMilliseconds((double)deliverDate.Value).Ticks; ;
+
+                }
+
+                order.FinalStatusId = statusId;
+                order.Mdate = DateTime.Now.Ticks;
+                order.MuserId = ClaimPrincipalFactory.GetUserId(User);
+
+
+                var orderstatus = new CustomerOrderStatusLog
+                {
+                    StatusId = statusId,
+                    CustomerOrderId = orderId,
+                    Cdate = DateTime.Now.Ticks,
+                    CuserId = ClaimPrincipalFactory.GetUserId(User)
+
+                };
+                order.CustomerOrderStatusLog.Add(orderstatus);
+                _repository.CustomerOrder.Update(order);
+                _repository.Save();
+                return Ok("");
+
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return BadRequest(e.Message);
+            }
+        }
+
 
         #region UI_Methods
 
@@ -198,7 +331,9 @@ namespace HandCarftBaseServer.Controllers
                     TransactionDate = DateTime.Now.Ticks,
                     Cdate = DateTime.Now.Ticks,
                     CuserId = userId,
-                    PaymentPrice = customerOrder.FinalPrice
+                    PaymentPrice = customerOrder.FinalPrice,
+                    FinalStatusId = 26
+
                 };
                 customerOrder.CustomerOrderPayment.Add(customerOrderPayment);
                 _repository.Save();
@@ -254,7 +389,7 @@ namespace HandCarftBaseServer.Controllers
                 if (result.code == 100 || result.code == 101)
                 {
 
-                    orderpeymnt.FinalStatusId = 100;
+                    orderpeymnt.FinalStatusId = 24;
                     orderpeymnt.RefNum = result.ref_id.ToString();
                     orderpeymnt.TransactionDate = DateTime.Now.Ticks;
                     orderpeymnt.CardPan = result.card_pan;
@@ -273,7 +408,7 @@ namespace HandCarftBaseServer.Controllers
                 else
                 {
 
-                    orderpeymnt.FinalStatusId = result.code;
+                    orderpeymnt.FinalStatusId = 25;
                     orderpeymnt.TransactionDate = DateTime.Now.Ticks;
                     _repository.CustomerOrderPayment.Update(orderpeymnt);
                     _repository.Save();
