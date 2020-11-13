@@ -239,6 +239,10 @@ namespace HandCarftBaseServer
                 .ForMember(u => u.StatusName, opt => opt.MapFrom(x => x.FinalStatus.Name))
                 .ForMember(u => u.PackingTypeName, opt => opt.MapFrom(x => x.PackingType.Name));
 
+
+            CreateMap<CustomerOrderProduct, CustomerOrderProductSampleDto>()
+                .ForMember(u => u.CoverImage, opt => opt.MapFrom(x => x.Product.CoverImageUrl));
+
             #endregion
 
             #region CustomerOrder
@@ -249,10 +253,10 @@ namespace HandCarftBaseServer
                         x.DeliveryDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.DeliveryDate.Value)))
                 .ForMember(u => u.OrderDate,
                     opt => opt.MapFrom(x =>
-                        x.DeliveryDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.OrderDate.Value)))
+                        x.OrderDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.OrderDate.Value)))
                 .ForMember(u => u.SendDate,
                     opt => opt.MapFrom(x =>
-                        x.DeliveryDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.SendDate.Value)))
+                        x.SendDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.SendDate.Value)))
                 .ForMember(u => u.PaymentTypeName, opt => opt.MapFrom(x => x.PaymentType.Title))
                 .ForMember(u => u.PostTypeName, opt => opt.MapFrom(x => x.PostType.Title))
                 .ForMember(u => u.FinalStatus, opt => opt.MapFrom(x => x.FinalStatus.Name))
@@ -269,10 +273,10 @@ namespace HandCarftBaseServer
                         x.DeliveryDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.DeliveryDate.Value)))
                 .ForMember(u => u.OrderDate,
                     opt => opt.MapFrom(x =>
-                        x.DeliveryDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.OrderDate.Value)))
+                        x.OrderDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.OrderDate.Value)))
                 .ForMember(u => u.SendDate,
                     opt => opt.MapFrom(x =>
-                        x.DeliveryDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.SendDate.Value)))
+                        x.SendDate == null ? "" : DateTimeFunc.TimeTickToShamsi(x.SendDate.Value)))
                 .ForMember(u => u.PaymentTypeName, opt => opt.MapFrom(x => x.PaymentType.Title))
                 .ForMember(u => u.PostTypeName, opt => opt.MapFrom(x => x.PostType.Title))
                 .ForMember(u => u.FinalStatus, opt => opt.MapFrom(x => x.FinalStatus.Name))
@@ -280,7 +284,8 @@ namespace HandCarftBaseServer
                     opt => opt.MapFrom(x =>
                         x.CustomerOrderPayment.Where(c => c.Ddate == null && c.DaDate == null)
                             .OrderByDescending(c => c.TransactionDate).Select(c => c.FinalStatus.Name)
-                            .FirstOrDefault()));
+                            .FirstOrDefault()))
+                .ForMember(u => u.ProductList, opt => opt.MapFrom(x => x.CustomerOrderProduct));
 
 
 

@@ -8,5 +8,6 @@ namespace Entities.DataTransferObjects
     {
         public long UserId { get; set; }
         public bool IsExist { get; set; }
+        public bool LoginByCode { get; set; }
     }
 }

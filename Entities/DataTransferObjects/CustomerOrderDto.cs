@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Entities.Models;
 
 namespace Entities.DataTransferObjects
 {
@@ -36,5 +37,6 @@ namespace Entities.DataTransferObjects
         public long? FinalWeight { get; set; }
         public string SendDate { get; set; }
         public string DeliveryDate { get; set; }
+        public List<CustomerOrderProductSampleDto> ProductList { get; set; }
     }
 }

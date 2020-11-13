@@ -33,16 +33,18 @@ namespace Repository
 
         }
 
-        public List<CustomerOrder> GetCustomerOrderList(long customerId)
+        public List<CustomerOrder> GetCustomerOrderList(long customerId, long? finalStatusId)
         {
 
-            var res = RepositoryContext.CustomerOrder.Where(c => c.CustomerId == customerId && c.Ddate == null && c.DaDate == null)
+            var res = RepositoryContext.CustomerOrder.Where(c => c.CustomerId == customerId && (c.FinalStatusId == finalStatusId || finalStatusId == null) && c.Ddate == null && c.DaDate == null)
                 .Include(c => c.FinalStatus)
                 .Include(c => c.PaymentType)
                 .Include(c => c.CustomerOrderPayment).ThenInclude(c => c.FinalStatus)
                 .Include(c => c.PostType)
-                .OrderByDescending(c => c.Cdate).ToList();
+                .Include(c => c.CustomerOrderProduct).ThenInclude(c => c.Product)
+                .ToList();
             return res;
+
 
         }
 

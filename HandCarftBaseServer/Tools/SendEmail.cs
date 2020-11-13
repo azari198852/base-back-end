@@ -154,7 +154,7 @@ namespace HandCarftBaseServer.Tools
             email.To.Add(MailboxAddress.Parse(emaill));
 
             email.Subject = "بازیابی رمز عبور";
-            var body = " رمز عبور جدید شما برای ورود به ";
+            var body = " کد تایید شما برای بازیابی رمز عبور در  ";
             body += "tabrizhandicrafts.com";
             body += System.Environment.NewLine;
             body += "";

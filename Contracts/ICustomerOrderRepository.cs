@@ -8,6 +8,6 @@ namespace Contracts
    public interface ICustomerOrderRepository:IRepositoryBase<CustomerOrder>
    {
        CustomerOrder GetCustomerOrderFullInfoById(long customerOrderId);
-       List<CustomerOrder> GetCustomerOrderList(long customerId);
+       List<CustomerOrder> GetCustomerOrderList(long customerId,long? finalStatusId);
    }
 }

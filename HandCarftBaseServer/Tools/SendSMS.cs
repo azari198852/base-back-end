@@ -72,7 +72,7 @@ namespace HandCarftBaseServer.Tools
         public bool SendLoginSms(long mobileNo,int code)
         {
 
-            var smsText = "کد تایید و رمز عبور شما برای ورود به ";
+            var smsText = "کد تایید شما برای ورود به ";
             smsText += "tabrizhandicrafts.com";
             smsText += "\\n";
             smsText += "";
@@ -101,7 +101,7 @@ namespace HandCarftBaseServer.Tools
         public bool SendRestPassSms(long mobileNo, int code)
         {
 
-            var smsText = "رمز عبور جدید شما برای ورود به ";
+            var smsText = "کد تایید شما برای تغییر رمز در سایت ";
             smsText += "tabrizhandicrafts.com";
             smsText += "\\n";
             smsText += "";

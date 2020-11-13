@@ -9,6 +9,7 @@ namespace Entities.Models
         public long? UserId { get; set; }
         public long? SendedCode { get; set; }
         public long? EndDateTime { get; set; }
+        public int? LoginType { get; set; }
         public long? CuserId { get; set; }
         public long? Cdate { get; set; }
         public long? DuserId { get; set; }

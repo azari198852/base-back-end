@@ -456,14 +456,14 @@ namespace HandCarftBaseServer.Controllers
         [Authorize]
         [HttpGet]
         [Route("CustomerOrder/GetCustomerOrderList_UI")]
-        public ListResult<CustomerOrderDto> GetCustomerOrderList_UI()
+        public ListResult<CustomerOrderDto> GetCustomerOrderList_UI(long? finalStatusId)
         {
             try
             {
                 var userId = ClaimPrincipalFactory.GetUserId(User);
                 var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).Select(c => c.Id)
                     .FirstOrDefault();
-                var res = _repository.CustomerOrder.GetCustomerOrderList(customerId);
+                var res = _repository.CustomerOrder.GetCustomerOrderList(customerId, finalStatusId);
                 var result = _mapper.Map<List<CustomerOrderDto>>(res);
 
                 var finalresult = ListResult<CustomerOrderDto>.GetSuccessfulResult(result);
@@ -472,6 +472,35 @@ namespace HandCarftBaseServer.Controllers
             catch (Exception e)
             {
                 return ListResult<CustomerOrderDto>.GetFailResult(e.Message);
+            }
+
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("CustomerOrder/GetCustomerOrderCountGroupByStatus")]
+        public ListResult<OrderCountGroupByStatusDto> GetCustomerOrderCountGroupByStatus()
+        {
+            try
+            {
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+                var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).Select(c => c.Id)
+                    .FirstOrDefault();
+                var res = _repository.CustomerOrder
+                    .FindByCondition(c =>c.CustomerId==customerId && c.Ddate == null && c.DaDate == null)
+                    .Include(c => c.FinalStatus).GroupBy(c=>c.FinalStatus.Name).Select(g => new OrderCountGroupByStatusDto
+                    {
+                        Status = g.Key,
+                        Count = g.Count()
+                    })
+                    .ToList();
+       
+                var finalresult = ListResult<OrderCountGroupByStatusDto>.GetSuccessfulResult(res);
+                return finalresult;
+            }
+            catch (Exception e)
+            {
+                return ListResult<OrderCountGroupByStatusDto>.GetFailResult(e.Message);
             }
 
         }
