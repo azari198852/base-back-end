@@ -28,6 +28,9 @@ namespace Repository
                   .Include(c => c.CustomerOrderProduct).ThenInclude(c => c.PackingType)
                   .Include(c => c.CustomerOrderProduct).ThenInclude(c => c.FinalStatus)
                   .Include(c => c.CustomerOrderProduct).ThenInclude(c => c.Seller)
+                  .Include(c=>c.Customer).ThenInclude(c=>c.CustomerAddress).ThenInclude(c=>c.Province)
+                  .Include(c=>c.Customer).ThenInclude(c=>c.CustomerAddress).ThenInclude(c=>c.City)
+                  .Include(c=>c.Customer).ThenInclude(c=>c.CustomerAddress)
                   .FirstOrDefault();
             return res;
 

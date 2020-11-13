@@ -505,7 +505,7 @@ namespace HandCarftBaseServer.Controllers
         /// </summary>
         [HttpPost]
         [Route("Account/SellerLoginRegister_UI")]
-        public SingleResult<LoginRegisterDto> SellerLoginRegister_UI(string email, long? mobileNo)
+        public SingleResult<LoginRegisterDto> SellerLoginRegister(string email, long? mobileNo)
         {
 
             try
@@ -620,7 +620,7 @@ namespace HandCarftBaseServer.Controllers
 
         [HttpPost]
         [Route("Account/SellerLogin_ByActivationCode_UI")]
-        public SingleResult<LoginResultDto> SellerLogin_ByActivationCode_UI(long userId, int activationCode)
+        public SingleResult<LoginResultDto> SellerLogin_ByActivationCode(long userId, int activationCode)
         {
 
             try
@@ -671,7 +671,7 @@ namespace HandCarftBaseServer.Controllers
 
         [HttpPost]
         [Route("Account/SellerLogin_ByPass_UI")]
-        public SingleResult<LoginResultDto> SellerLogin_ByPass_UI(long userId, string pass)
+        public SingleResult<LoginResultDto> SellerLogin_ByPass(long userId, string pass)
         {
 
             try

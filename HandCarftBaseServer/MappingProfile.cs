@@ -260,11 +260,19 @@ namespace HandCarftBaseServer
                 .ForMember(u => u.PaymentTypeName, opt => opt.MapFrom(x => x.PaymentType.Title))
                 .ForMember(u => u.PostTypeName, opt => opt.MapFrom(x => x.PostType.Title))
                 .ForMember(u => u.FinalStatus, opt => opt.MapFrom(x => x.FinalStatus.Name))
+                .ForMember(u => u.CustomerAddress,
+                    opt => opt.MapFrom(x =>
+                        x.CustomerAddress.Province.Name + " - " + x.CustomerAddress.City.Name + " - " +
+                        x.CustomerAddress.Address))
+                .ForMember(u => u.CustomerMobile, opt => opt.MapFrom(x => x.Customer.Mobile))
+                .ForMember(u => u.CustomerName, opt => opt.MapFrom(x => x.Customer.Name + " " + x.Customer.Fname))
                 .ForMember(u => u.PaymentStatus,
                     opt => opt.MapFrom(x =>
                         x.CustomerOrderPayment.Where(c => c.Ddate == null && c.DaDate == null)
                             .OrderByDescending(c => c.TransactionDate).Select(c => c.FinalStatus.Name)
-                            .FirstOrDefault()));
+                            .FirstOrDefault()))
+                .ForMember(u => u.CustomerOrderProductsList, opt => opt.MapFrom(x => x.CustomerOrderProduct))
+                .ForMember(u => u.CustomerOrderPaymentList, opt => opt.MapFrom(x => x.CustomerOrderPayment));
 
 
             CreateMap<CustomerOrder, CustomerOrderDto>()
@@ -289,6 +297,15 @@ namespace HandCarftBaseServer
 
 
 
+            #endregion
+
+            #region CustomerOrderPayment
+
+            CreateMap<CustomerOrderPayment, CustomerOrderPaymentDto>()
+                .ForMember(u => u.FinalStatus, opt => opt.MapFrom(x => x.FinalStatus.Name))
+                .ForMember(u => u.TransactionDate,
+                    opt => opt.MapFrom(x =>
+                        x.TransactionDate == null ? "---" : DateTimeFunc.TimeTickToShamsi(x.TransactionDate.Value)));
             #endregion
 
             #region Document

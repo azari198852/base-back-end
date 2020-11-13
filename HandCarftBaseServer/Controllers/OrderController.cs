@@ -42,10 +42,10 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                
-                 var res = _repository.Status
-                    .FindByCondition(c => c.CatStatus.Tables.Any(x => x.Name == "CustomerOrder"))
-                    .Select(c => new { c.Id, c.Name }).ToList();
+
+                var res = _repository.Status
+                   .FindByCondition(c => c.CatStatus.Tables.Any(x => x.Name == "CustomerOrder"))
+                   .Select(c => new { c.Id, c.Name }).ToList();
                 return Ok(res);
             }
             catch (Exception e)
@@ -488,14 +488,14 @@ namespace HandCarftBaseServer.Controllers
                 var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).Select(c => c.Id)
                     .FirstOrDefault();
                 var res = _repository.CustomerOrder
-                    .FindByCondition(c =>c.CustomerId==customerId && c.Ddate == null && c.DaDate == null)
-                    .Include(c => c.FinalStatus).GroupBy(c=>c.FinalStatus.Name).Select(g => new OrderCountGroupByStatusDto
+                    .FindByCondition(c => c.CustomerId == customerId && c.Ddate == null && c.DaDate == null)
+                    .Include(c => c.FinalStatus).GroupBy(c => c.FinalStatus.Name).Select(g => new OrderCountGroupByStatusDto
                     {
                         Status = g.Key,
                         Count = g.Count()
                     })
                     .ToList();
-       
+
                 var finalresult = ListResult<OrderCountGroupByStatusDto>.GetSuccessfulResult(res);
                 return finalresult;
             }
@@ -523,8 +523,9 @@ namespace HandCarftBaseServer.Controllers
                 var seller = _repository.Seller.FindByCondition(c => c.UserId == userid).FirstOrDefault();
                 if (seller == null) return Unauthorized();
                 var res = _repository.CustomerOrderProduct
-                    .FindByCondition(c => c.Ddate == null && c.DaDate == null && c.SellerId == seller.Id)
+                    .FindByCondition(c => c.Ddate == null && c.DaDate == null && c.SellerId == seller.Id && (c.FinalStatusId == 22 || c.FinalStatusId == 23))
                     .Include(c => c.CustomerOrder)
+                    .Include(c => c.FinalStatus)
                     .Select(c => new
                     {
                         c.Id,
@@ -532,15 +533,47 @@ namespace HandCarftBaseServer.Controllers
                         c.Product.Coding,
                         c.OrderCount,
                         c.CustomerOrder.OrderNo,
+                        c.FinalStatusId,
+                        Status = c.FinalStatus.Name,
                         Orderdate = DateTimeFunc.TimeTickToShamsi(c.CustomerOrder.OrderDate.Value)
-                    }).OrderByDescending(c=>c.Id).ToList();
+                    }).OrderByDescending(c => c.Id).ToList();
 
                 return Ok(res);
 
             }
             catch (Exception e)
             {
-                return BadRequest("");
+                _logger.LogError(e, e.Message);
+                return BadRequest(e.Message);
+            }
+
+        }
+
+
+        [Authorize]
+        [HttpPut]
+        [Route("CustomerOrder/ChangeOrderPruductStatusBySeller")]
+        public IActionResult ChangeOrderPruductStatusBySeller(long customerOrderProductId)
+        {
+
+            try
+            {
+                var userid = ClaimPrincipalFactory.GetUserId(User);
+                var seller = _repository.Seller.FindByCondition(c => c.UserId == userid || true).FirstOrDefault();
+                if (seller == null) return Unauthorized();
+                var product = _repository.CustomerOrderProduct.FindByCondition(c => c.Id == customerOrderProductId)
+                    .FirstOrDefault();
+                if (product == null) return NotFound("کد محصول اشتباه است");
+                product.FinalStatusId = 23;
+                _repository.CustomerOrderProduct.Update(product);
+                _repository.Save();
+                return Ok();
+
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return BadRequest(e.Message);
             }
 
         }

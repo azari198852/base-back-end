@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Entities.Models;
 
 namespace Entities.DataTransferObjects
 {
-   public class CustomerOrderFullDto
+    public class CustomerOrderFullDto
     {
         public long Id { get; set; }
         public long? CustomerId { get; set; }
         public long? CustomerAddressId { get; set; }
+        public string CustomerAddress { get; set; }
+        public long? CustomerMobile { get; set; }
+        public string CustomerName { get; set; }
         public string OrderDate { get; set; }
         public long? OrderNo { get; set; }
         public long? FinalStatusId { get; set; }
@@ -40,7 +44,7 @@ namespace Entities.DataTransferObjects
         public string SendDate { get; set; }
         public string DeliveryDate { get; set; }
         public List<CustomerOrderProductDto> CustomerOrderProductsList { get; set; }
-
+        public List<CustomerOrderPaymentDto> CustomerOrderPaymentList { get; set; }
 
     }
 }
