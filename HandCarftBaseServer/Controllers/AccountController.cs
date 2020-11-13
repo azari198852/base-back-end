@@ -504,7 +504,7 @@ namespace HandCarftBaseServer.Controllers
         ///ورود / ثبت نام صنعتگر به سیستم 
         /// </summary>
         [HttpPost]
-        [Route("Account/SellerLoginRegister_UI")]
+        [Route("Account/SellerLoginRegister")]
         public SingleResult<LoginRegisterDto> SellerLoginRegister(string email, long? mobileNo)
         {
 
@@ -619,7 +619,7 @@ namespace HandCarftBaseServer.Controllers
         }
 
         [HttpPost]
-        [Route("Account/SellerLogin_ByActivationCode_UI")]
+        [Route("Account/SellerLogin_ByActivationCode")]
         public SingleResult<LoginResultDto> SellerLogin_ByActivationCode(long userId, int activationCode)
         {
 
@@ -670,7 +670,7 @@ namespace HandCarftBaseServer.Controllers
         }
 
         [HttpPost]
-        [Route("Account/SellerLogin_ByPass_UI")]
+        [Route("Account/SellerLogin_ByPass")]
         public SingleResult<LoginResultDto> SellerLogin_ByPass(long userId, string pass)
         {
 

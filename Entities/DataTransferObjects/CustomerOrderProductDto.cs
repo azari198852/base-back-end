@@ -16,6 +16,7 @@ namespace Entities.DataTransferObjects
         public string ProductName { get; set; }
         public long? ProductPrice { get; set; }
         public long? ProductIncreasePrice { get; set; }
+        public string ProductImage { get; set; }
         public long? FinalStatusId { get; set; }
         public string StatusName { get; set; }
         public long? OrderType { get; set; }

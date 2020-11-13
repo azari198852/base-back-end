@@ -237,7 +237,8 @@ namespace HandCarftBaseServer
             CreateMap<CustomerOrderProduct, CustomerOrderProductDto>()
                 .ForMember(u => u.SellerName, opt => opt.MapFrom(x => x.Seller.Name + " " + x.Seller.Fname))
                 .ForMember(u => u.StatusName, opt => opt.MapFrom(x => x.FinalStatus.Name))
-                .ForMember(u => u.PackingTypeName, opt => opt.MapFrom(x => x.PackingType.Name));
+                .ForMember(u => u.PackingTypeName, opt => opt.MapFrom(x => x.PackingType.Name))
+                .ForMember(u => u.ProductImage, opt => opt.MapFrom(x => x.Product.CoverImageUrl));
 
 
             CreateMap<CustomerOrderProduct, CustomerOrderProductSampleDto>()

@@ -31,6 +31,7 @@ namespace Repository
                   .Include(c=>c.Customer).ThenInclude(c=>c.CustomerAddress).ThenInclude(c=>c.Province)
                   .Include(c=>c.Customer).ThenInclude(c=>c.CustomerAddress).ThenInclude(c=>c.City)
                   .Include(c=>c.Customer).ThenInclude(c=>c.CustomerAddress)
+                  .Include(u=>u.CustomerOrderProduct).ThenInclude(c=>c.Product)
                   .FirstOrDefault();
             return res;
 
