@@ -42,7 +42,8 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                var res = _repository.Status
+                
+                 var res = _repository.Status
                     .FindByCondition(c => c.CatStatus.Tables.Any(x => x.Name == "CustomerOrder"))
                     .Select(c => new { c.Id, c.Name }).ToList();
                 return Ok(res);
@@ -532,7 +533,7 @@ namespace HandCarftBaseServer.Controllers
                         c.OrderCount,
                         c.CustomerOrder.OrderNo,
                         Orderdate = DateTimeFunc.TimeTickToShamsi(c.CustomerOrder.OrderDate.Value)
-                    });
+                    }).OrderByDescending(c=>c.Id).ToList();
 
                 return Ok(res);
 
