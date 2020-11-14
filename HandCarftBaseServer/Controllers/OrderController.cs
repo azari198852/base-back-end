@@ -311,14 +311,15 @@ namespace HandCarftBaseServer.Controllers
                 };
                 var postresult = post.GetDeliveryPrice(postpriceparam).Result;
                 if (postresult.ErrorCode != 0) return SingleResult<InsertOrderResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
-                customerOrder.PostServicePrice = postresult.PostDeliveryPrice + postresult.VatTax;
+                customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
                 _repository.CustomerOrder.Create(customerOrder);
 
 
 
                 var request = new ZarinPallRequest
                 {
-                    amount = (int)((customerOrder.FinalPrice.Value + customerOrder.PostServicePrice) * 10),
+                  //  amount = (int)((customerOrder.FinalPrice.Value + customerOrder.PostServicePrice) * 10),
+                    amount = (int)((customerOrder.FinalPrice.Value) * 10),
                     description = "order NO: " + customerOrder.OrderNo
                 };
                 var zarinPal = new ZarinPal();
@@ -358,6 +359,65 @@ namespace HandCarftBaseServer.Controllers
 
             }
         }
+
+        /// <summary>
+        ///پرداخت مبلغ سفارش با آیدی سفارش
+        /// </summary>
+        [Authorize]
+        [HttpGet]
+        [Route("CustomerOrderPayment/MakePaymentByOrderId")]
+        public SingleResult<string> MakePaymentByOrderId(long customerOrderId)
+        {
+
+            try
+            {
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+                var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).Select(c=>c.Id).FirstOrDefault();
+                var customerOrder = _repository.CustomerOrder.FindByCondition(c => c.Id == customerOrderId && c.CustomerId == customerId).FirstOrDefault();
+
+                if (customerOrder == null)
+                {
+
+                    return SingleResult<string>.GetFailResult("سفارش وجود ندارد با سفارش مربوط به کاربر جاری نمی باشد");
+                }
+
+                var request = new ZarinPallRequest
+                {
+                    amount = (int)((customerOrder.FinalPrice.Value + customerOrder.PostServicePrice) * 10),
+                    description = "order NO: " + customerOrder.OrderNo
+                };
+                var zarinPal = new ZarinPal();
+                var res = zarinPal.Request(request);
+
+                var customerOrderPayment = new CustomerOrderPayment
+                {
+                    OrderNo = customerOrder.OrderNo.ToString(),
+                    TraceNo = res.authority,
+                    TransactionPrice = customerOrder.FinalPrice,
+                    TransactionDate = DateTime.Now.Ticks,
+                    Cdate = DateTime.Now.Ticks,
+                    CuserId = userId,
+                    PaymentPrice = customerOrder.FinalPrice,
+                    FinalStatusId = 26
+
+                };
+                _repository.CustomerOrderPayment.Create(customerOrderPayment);
+                _repository.Save();
+
+                return SingleResult<string>.GetSuccessfulResult("https://www.zarinpal.com/pg/StartPay/" + res.authority);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+
+                return SingleResult<string>.GetFailResult(e.Message);
+
+
+            }
+
+        }
+
+
 
         /// <summary>
         ///استعلام پرداخت از بانک
@@ -446,6 +506,8 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e, e.Message);
+
                 return SingleResult<CustomerOrderFullDto>.GetFailResult(e.Message);
             }
 
@@ -472,6 +534,8 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e, e.Message);
+
                 return ListResult<CustomerOrderDto>.GetFailResult(e.Message);
             }
 
@@ -501,6 +565,8 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e, e.Message);
+
                 return ListResult<OrderCountGroupByStatusDto>.GetFailResult(e.Message);
             }
 

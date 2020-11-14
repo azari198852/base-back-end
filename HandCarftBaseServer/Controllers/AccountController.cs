@@ -136,6 +136,8 @@ namespace HandCarftBaseServer.Controllers
 
             try
             {
+                var _random = new Random();
+                var code = _random.Next(1000, 9999);
                 if (mobileNo != null)
                 {
 
@@ -143,10 +145,9 @@ namespace HandCarftBaseServer.Controllers
                         .Include(c => c.UserRole)
                         .FirstOrDefault();
 
-                    if (user == null || user.UserRole.All(c => c.Role != 2) || string.IsNullOrWhiteSpace(user.Hpassword))
+                    if (user == null || user.UserRole.All(c => c.Role != 2))
                     {
-                        var _random = new Random();
-                        var code = _random.Next(1000, 9999);
+
                         var _user = new Users
                         {
                             Mobile = mobileNo,
@@ -171,6 +172,7 @@ namespace HandCarftBaseServer.Controllers
 
                         });
                         _repository.Users.Create(_user);
+
                         _repository.Save();
 
                         var sms = new SendSMS();
@@ -179,6 +181,25 @@ namespace HandCarftBaseServer.Controllers
                         return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
 
                     }
+
+                    else if (string.IsNullOrWhiteSpace(user.Hpassword))
+                    {
+
+                        user.UserActivation.Add(new UserActivation
+                        {
+                            SendedCode = code,
+                            EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
+                            Cdate = DateTime.Now.Ticks,
+                            LoginType = 1
+
+                        });
+
+                        _repository.Users.Update(user);
+
+                        var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
+                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+                    }
+
 
                     var resss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
                     return SingleResult<LoginRegisterDto>.GetSuccessfulResult(resss);
@@ -190,10 +211,9 @@ namespace HandCarftBaseServer.Controllers
                         .Include(c => c.UserRole)
                         .FirstOrDefault();
 
-                    if (user == null || user.UserRole.All(c => c.Role != 2) || string.IsNullOrWhiteSpace(user.Hpassword))
+                    if (user == null || user.UserRole.All(c => c.Role != 2))
                     {
-                        Random _random = new Random();
-                        var code = _random.Next(1000, 9999);
+
                         Users _user = new Users
                         {
                             Email = email,
@@ -227,6 +247,24 @@ namespace HandCarftBaseServer.Controllers
 
                     }
 
+                    else if (string.IsNullOrWhiteSpace(user.Hpassword))
+                    {
+
+                        user.UserActivation.Add(new UserActivation
+                        {
+                            SendedCode = code,
+                            EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
+                            Cdate = DateTime.Now.Ticks,
+                            LoginType = 1
+
+                        });
+
+                        _repository.Users.Update(user);
+
+                        var ress = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
+                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
+                    }
+
                     var resss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
                     return SingleResult<LoginRegisterDto>.GetSuccessfulResult(resss);
 
@@ -253,7 +291,7 @@ namespace HandCarftBaseServer.Controllers
             {
                 var time = DateTime.Now.Ticks;
                 var activation = _repository.UserActivation.FindByCondition(c =>
-                        c.UserId == userId && c.SendedCode == activationCode && c.EndDateTime > DateTime.Now.Ticks && c.LoginType == 1)
+                        c.UserId == userId && c.SendedCode == activationCode && c.EndDateTime > time && c.LoginType == 1)
                     .FirstOrDefault();
                 if (activation == null) return SingleResult<LoginResultDto>.GetFailResult("کد وارد شده صحیح نمی باشد");
 
@@ -451,10 +489,10 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null) || (c.Id == userId && userId != null)).FirstOrDefault();
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null) || (c.Id == userId && userId != null)).Include(c => c.UserRole).FirstOrDefault();
                 if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
                 var now = DateTime.Now.Ticks;
-                if (_repository.UserActivation.FindByCondition(c => (c.UserId == user.Id) && (c.EndDateTime >now)  && (c.LoginType == 1)).Any())
+                if (_repository.UserActivation.FindByCondition(c => (c.UserId == user.Id) && (c.EndDateTime > now) && (c.LoginType == 1)).Any())
                     return VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
 
                 var _random = new Random();
