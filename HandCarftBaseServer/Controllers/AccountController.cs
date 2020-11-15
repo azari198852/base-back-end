@@ -431,6 +431,7 @@ namespace HandCarftBaseServer.Controllers
                     em.SendResetPassEmail(email, code);
 
                 }
+                _repository.Users.Update(user);
                 _repository.Save();
                 //create claims details based on the user information
 
