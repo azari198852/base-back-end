@@ -38,6 +38,12 @@ namespace Repository
             this.RepositoryContext.Set<T>().Update(entity);
         }
 
+        public void UpdateRange(List<T> entity)
+        {
+
+            this.RepositoryContext.Set<List<T>>().UpdateRange(entity);
+        }
+
         public void Delete(T entity)
         {
             this.RepositoryContext.Set<T>().Remove(entity);

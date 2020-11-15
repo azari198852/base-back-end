@@ -391,10 +391,10 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).FirstOrDefault();
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c=>c.UserRole).FirstOrDefault();
                 if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
-
-                if (_repository.UserActivation.FindByCondition(c => c.UserId == user.Id && c.EndDateTime > DateTime.Now.Ticks && c.LoginType == 2).Any())
+                var now = DateTime.Now.Ticks;
+                if (_repository.UserActivation.FindByCondition(c => c.UserId == user.Id && c.EndDateTime > now && c.LoginType == 2).Any())
                     return VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
 
                 var random = new Random();
@@ -458,9 +458,9 @@ namespace HandCarftBaseServer.Controllers
 
                 var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).FirstOrDefault();
                 if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
-
+                var now = DateTime.Now.Ticks;
                 var s = _repository.UserActivation.FindByCondition(c =>
-                    c.UserId == user.Id && c.EndDateTime > DateTime.Now.Ticks && c.SendedCode == code).FirstOrDefault();
+                    c.UserId == user.Id && c.EndDateTime >now  && c.SendedCode == code).FirstOrDefault();
                 if (s == null) return VoidResult.GetFailResult("کد وارد شده جهت تغییر کلمه عبور صحیح نمی باشد.");
 
                 user.Hpassword = pass;

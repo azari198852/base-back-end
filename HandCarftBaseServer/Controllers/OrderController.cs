@@ -200,10 +200,125 @@ namespace HandCarftBaseServer.Controllers
 
         #region UI_Methods
 
+
+        /// <summary>
+        ///پیشنمایش سفارش
+        /// </summary>
+        [Authorize]
+        [HttpPost]
+        [Route("Product/CustomerOrderPreview_UI")]
+        public SingleResult<OrderPreViewResultDto> CustomerOrderPreview_UI(OrderModel order)
+        {
+            try
+            {
+
+                var orerProductList = new List<CustomerOrderProduct>();
+
+
+        
+                order.ProductList.ForEach(c =>
+                {
+                    var product = _repository.Product.FindByCondition(x => x.Id == c.ProductId).First();
+                    var ofer = _repository.Offer.FindByCondition(x => x.Id == c.OfferId).FirstOrDefault();
+                    var packingType = _repository.ProductPackingType.FindByCondition(x => x.Id == c.PackingTypeId)
+                        .FirstOrDefault();
+                    var statusId = _repository.Status.GetSatusId("CustomerOrderProduct", 2);
+                    var orderproduct = new CustomerOrderProduct
+                    {
+                        OrderCount = c.Count,
+                        ProductId = c.ProductId,
+                        ProductCode = product.Coding,
+                        ProductName = product.Name,
+                        ProductPrice = product.Price,
+                        ProductOfferId = c.OfferId,
+                        ProductOfferCode = ofer?.OfferCode,
+                        ProductOfferPrice = (long?)(ofer != null ? (ofer.Value / 100 * product.Price) : 0),
+                        ProductOfferValue = ofer?.Value,
+                        PackingTypeId = c.PackingTypeId,
+                        PackingWeight = packingType == null ? 0 : packingType.Weight,
+                        PackingPrice = packingType == null ? 0 : packingType.Price,
+                        SellerId = product.SellerId,
+                        Weight = c.Count * product.Weight,
+                        FinalWeight = (c.Count * product.Weight) + (c.Count * (packingType == null ? 0 : packingType.Weight)),
+                        FinalStatusId = statusId
+
+                    };
+                    orerProductList.Add(orderproduct);
+
+                });
+
+                var offer = _repository.Offer.FindByCondition(c => c.Id == order.OfferId).FirstOrDefault();
+                var paking = _repository.PackingType.FindByCondition(c => c.Id == order.PaymentTypeId).FirstOrDefault();
+                var customerOrder = new CustomerOrder
+                {
+                    Cdate = DateTime.Now.Ticks,
+                    CustomerAddressId = order.CustomerAddressId,
+                    CustomerDescription = order.CustomerDescription,
+                    OfferId = order.OfferId,
+                    OrderPrice = orerProductList.Sum(x =>
+                        ((x.PackingPrice + x.ProductPrice - x.ProductOfferPrice) * x.OrderCount))
+                };
+
+                customerOrder.OrderPrice = orerProductList.Sum(c =>
+                    (c.ProductPrice + c.PackingPrice - c.ProductOfferPrice) * c.OrderCount);
+                customerOrder.OfferPrice =
+                    (long?)(customerOrder.OrderPrice * (offer == null ? 0 : offer.Value / 100));
+                customerOrder.OfferValue = (int?)offer?.Value;
+                customerOrder.OrderDate = DateTime.Now.Ticks;
+                customerOrder.FinalWeight = orerProductList.Sum(x => x.FinalWeight);
+                customerOrder.OrderWeight = customerOrder.FinalWeight;
+                customerOrder.PaymentTypeId = order.PaymentTypeId;
+                customerOrder.PostServicePrice = 0;
+                customerOrder.PostTypeId = order.PostTypeId;
+
+                //customerOrder.TaxPrice = (long?)((customerOrder.OrderPrice - customerOrder.OfferPrice) * 0.09);
+                //customerOrder.TaxValue = 9;                
+                customerOrder.TaxPrice = 0;
+                customerOrder.TaxValue = 9;
+                customerOrder.FinalPrice = customerOrder.OrderPrice + customerOrder.TaxPrice;
+
+                customerOrder.CustomerOrderProduct = orerProductList;
+                var toCityId = _repository.CustomerAddress.FindByCondition(c => c.Id == order.CustomerAddressId).Include(c => c.City).Select(c => c.City.PostCode).FirstOrDefault();
+
+                var post = new PostServiceProvider();
+                var postType = _repository.PostType.FindByCondition(c => c.Id == order.PostTypeId).FirstOrDefault();
+                var payType = _repository.PaymentType.FindByCondition(c => c.Id == order.PaymentTypeId)
+                    .FirstOrDefault();
+                var postpriceparam = new PostGetDeliveryPriceParam
+                {
+                    Price = (int)customerOrder.OrderPrice.Value,
+                    Weight = (int)customerOrder.FinalWeight.Value,
+                    ServiceType = postType?.Rkey ?? 2,// (int)customerOrder.PostTypeId,
+                    ToCityId = (int)toCityId,
+                    PayType = (int)(payType?.Rkey ?? 88)
+
+                };
+                var postresult = post.GetDeliveryPrice(postpriceparam).Result;
+                if (postresult.ErrorCode != 0) return SingleResult<OrderPreViewResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
+                customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
+
+
+                var result = new OrderPreViewResultDto
+                {
+                   Order=customerOrder,
+                   ProductsList= orerProductList
+                };
+
+                return SingleResult<OrderPreViewResultDto>.GetSuccessfulResult(result);
+
+
+            }
+            catch (Exception e)
+            {
+                return SingleResult<OrderPreViewResultDto>.GetFailResult(e.Message);
+
+            }
+        }
+
         /// <summary>
         ///ثبت سفارش
         /// </summary>
-      ////  [Authorize]
+        [Authorize]
         [HttpPost]
         [Route("Product/InsertCustomerOrder_UI")]
         public SingleResult<InsertOrderResultDto> GetProductByIdList_UI(OrderModel order)
@@ -289,7 +404,9 @@ namespace HandCarftBaseServer.Controllers
                 customerOrder.PostServicePrice = 0;
                 customerOrder.PostTypeId = order.PostTypeId;
 
-                customerOrder.TaxPrice = (long?)((customerOrder.OrderPrice - customerOrder.OfferPrice) * 0.09);
+                //customerOrder.TaxPrice = (long?)((customerOrder.OrderPrice - customerOrder.OfferPrice) * 0.09);
+                //customerOrder.TaxValue = 9;                
+                customerOrder.TaxPrice = 0;
                 customerOrder.TaxValue = 9;
                 customerOrder.FinalPrice = customerOrder.OrderPrice + customerOrder.TaxPrice;
 
@@ -422,7 +539,7 @@ namespace HandCarftBaseServer.Controllers
         /// <summary>
         ///استعلام پرداخت از بانک
         /// </summary>
-       // [Authorize]
+        [Authorize]
         [HttpGet]
         [Route("CustomerOrderPayment/VerifyPayment_UI")]
         public SingleResult<string> VerifyPayment(string authority, string status)
@@ -455,14 +572,40 @@ namespace HandCarftBaseServer.Controllers
                     orderpeymnt.TransactionDate = DateTime.Now.Ticks;
                     orderpeymnt.CardPan = result.card_pan;
                     _repository.CustomerOrderPayment.Update(orderpeymnt);
-                    _repository.Save();
-                    var sendSms = new SendSMS();
 
-                    sendSms.SendSuccessOrderPayment("0" + customer.Mobile.ToString(), orderpeymnt.OrderNo, customerOrderId.Value);
+                    var sendSms = new SendSMS();
+                    sendSms.SendSuccessOrderPayment(customer.Mobile.Value, orderpeymnt.OrderNo, customerOrderId.Value);
+
                     var sendEmail = new SendEmail();
                     var email = customer.Email;
                     sendEmail.SendSuccessOrderPayment(email, orderpeymnt.OrderNo, customerOrderId.Value);
                     _logger.LogInformation($"پرداخت موفق شماره تراکنش {authority}", authority);
+
+
+                    var productist = _repository.CustomerOrderProduct.FindByCondition(c => c.CustomerOrderId == customerOrderId).Select(c => c.Product).ToList();
+                    productist.ForEach(c =>
+                    {
+                        c.Count = c.Count--;
+                        _repository.Product.Update(c);
+                    });
+                  
+
+                    var sellerList = _repository.CustomerOrderProduct.FindByCondition(c => c.CustomerOrderId == customerOrderId).Select(c => c.Seller.Mobile).ToList();
+
+                    sellerList.ForEach(c =>
+                    {
+                        if (c != null)
+                        {
+                            var sendSms = new SendSMS();
+                            sendSms.SendOrderSmsForSeller(c.Value);
+
+                        }
+
+
+                    });
+
+                    _repository.Save();
+
                     return SingleResult<string>.GetSuccessfulResult("عملیات پرداخت با موفقیت انجام شد.");
 
                 }
