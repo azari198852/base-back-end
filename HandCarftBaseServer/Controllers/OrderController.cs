@@ -203,7 +203,7 @@ namespace HandCarftBaseServer.Controllers
         /// <summary>
         ///ثبت سفارش
         /// </summary>
-        [Authorize]
+      ////  [Authorize]
         [HttpPost]
         [Route("Product/InsertCustomerOrder_UI")]
         public SingleResult<InsertOrderResultDto> GetProductByIdList_UI(OrderModel order)
@@ -318,7 +318,7 @@ namespace HandCarftBaseServer.Controllers
 
                 var request = new ZarinPallRequest
                 {
-                  //  amount = (int)((customerOrder.FinalPrice.Value + customerOrder.PostServicePrice) * 10),
+                    //  amount = (int)((customerOrder.FinalPrice.Value + customerOrder.PostServicePrice) * 10),
                     amount = (int)((customerOrder.FinalPrice.Value) * 10),
                     description = "order NO: " + customerOrder.OrderNo
                 };
@@ -372,7 +372,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
                 var userId = ClaimPrincipalFactory.GetUserId(User);
-                var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).Select(c=>c.Id).FirstOrDefault();
+                var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).Select(c => c.Id).FirstOrDefault();
                 var customerOrder = _repository.CustomerOrder.FindByCondition(c => c.Id == customerOrderId && c.CustomerId == customerId).FirstOrDefault();
 
                 if (customerOrder == null)
@@ -422,7 +422,7 @@ namespace HandCarftBaseServer.Controllers
         /// <summary>
         ///استعلام پرداخت از بانک
         /// </summary>
-        [Authorize]
+       // [Authorize]
         [HttpGet]
         [Route("CustomerOrderPayment/VerifyPayment_UI")]
         public SingleResult<string> VerifyPayment(string authority, string status)
@@ -442,7 +442,7 @@ namespace HandCarftBaseServer.Controllers
                 var zarinPalVerifyRequest = new ZarinPalVerifyRequest
                 {
                     authority = authority,
-                    amount = (int)orderpeymnt.TransactionPrice.Value
+                    amount = (int)orderpeymnt.TransactionPrice.Value * 10
                 };
 
                 var zarinPal = new ZarinPal();
