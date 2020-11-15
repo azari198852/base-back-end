@@ -456,7 +456,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).FirstOrDefault();
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c=>c.UserRole).FirstOrDefault();
                 if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
                 var now = DateTime.Now.Ticks;
                 var s = _repository.UserActivation.FindByCondition(c =>
