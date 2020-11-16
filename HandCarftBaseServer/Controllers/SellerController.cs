@@ -46,6 +46,35 @@ namespace HandCarftBaseServer.Controllers
         }
 
 
+        [HttpGet]
+        [Route("Seller/GetSellerListForGrid")]
+        public IActionResult GetSellerListForGrid()
+        {
+            try
+            {
+                var res = _repository.Seller.FindByCondition(c => c.DaUserId == null && c.DuserId == null).Include(c => c.FinalStatus).Select(c => new
+                {
+                    c.Id,
+                    c.SellerCode,
+                    Type = c.RealOrLegal == 1 ? "حقیقی" : "حقوقی",
+                    Fullname = c.Name + " " + c.Fname,
+                    c.MelliCode,
+                    c.Mobile,
+                    c.Tel,
+                    Status = c.FinalStatus.Name
+
+                })
+                    .ToList();
+
+                return Ok(res);
+            }
+            catch (Exception e)
+            {
+                return BadRequest("");
+            }
+        }
+
+
         #region UI_Methods
 
         [HttpPost]
@@ -54,7 +83,7 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                if (!ModelState.IsValid) return LongResult.GetFailResult("فیلدهای اجباری پر نشده اند"); 
+                if (!ModelState.IsValid) return LongResult.GetFailResult("فیلدهای اجباری پر نشده اند");
                 if (await _repository.Users.FindByCondition(c => c.Username == seller.Mobile.ToString()).AnyAsync())
                     return LongResult.GetFailResult("UserName Already Exits!");
 

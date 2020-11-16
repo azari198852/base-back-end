@@ -871,7 +871,7 @@ namespace HandCarftBaseServer.Controllers
                 var seller = _repository.Seller.FindByCondition(c => c.UserId == userid).FirstOrDefault();
                 if (seller == null) return Unauthorized();
                 return Ok(_repository.Product.FindByCondition(c => c.Ddate == null && c.DaDate == null && c.SellerId == seller.Id &&
-                                                               (c.FinalStatusId == 7) || (c.FinalStatusId == 9) || (c.FinalStatusId == 10) || (c.FinalStatusId == 11))
+                                                               (c.FinalStatusId == 7) || (c.FinalStatusId == 8) || (c.FinalStatusId == 9) || (c.FinalStatusId == 10) || (c.FinalStatusId == 11))
                     .Include(c => c.CatProduct)
                     .Include(c => c.FinalStatus)
                     .Select(c => new
@@ -886,7 +886,7 @@ namespace HandCarftBaseServer.Controllers
                         c.Weight,
                         c.ProduceDuration,
                         c.ProducePrice,
-
+                        
 
                     })
                     .ToList());

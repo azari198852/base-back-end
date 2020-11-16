@@ -204,7 +204,7 @@ namespace HandCarftBaseServer.Controllers
         /// <summary>
         ///پیشنمایش سفارش
         /// </summary>
-        [Authorize]
+       // [Authorize]
         [HttpPost]
         [Route("Product/CustomerOrderPreview_UI")]
         public SingleResult<OrderPreViewResultDto> CustomerOrderPreview_UI(OrderModel order)
@@ -249,35 +249,21 @@ namespace HandCarftBaseServer.Controllers
 
                 var offer = _repository.Offer.FindByCondition(c => c.Id == order.OfferId).FirstOrDefault();
                 var paking = _repository.PackingType.FindByCondition(c => c.Id == order.PaymentTypeId).FirstOrDefault();
-                var customerOrder = new CustomerOrder
-                {
-                    Cdate = DateTime.Now.Ticks,
-                    CustomerAddressId = order.CustomerAddressId,
-                    CustomerDescription = order.CustomerDescription,
-                    OfferId = order.OfferId,
-                    OrderPrice = orerProductList.Sum(x =>
-                        ((x.PackingPrice + x.ProductPrice - x.ProductOfferPrice) * x.OrderCount))
-                };
-
+                var customerOrder = new OrderPreViewResultDto();
+   
                 customerOrder.OrderPrice = orerProductList.Sum(c =>
                     (c.ProductPrice + c.PackingPrice - c.ProductOfferPrice) * c.OrderCount);
                 customerOrder.OfferPrice =
                     (long?)(customerOrder.OrderPrice * (offer == null ? 0 : offer.Value / 100));
                 customerOrder.OfferValue = (int?)offer?.Value;
-                customerOrder.OrderDate = DateTime.Now.Ticks;
                 customerOrder.FinalWeight = orerProductList.Sum(x => x.FinalWeight);
                 customerOrder.OrderWeight = customerOrder.FinalWeight;
                 customerOrder.PaymentTypeId = order.PaymentTypeId;
                 customerOrder.PostServicePrice = 0;
-                customerOrder.PostTypeId = order.PostTypeId;
 
-                //customerOrder.TaxPrice = (long?)((customerOrder.OrderPrice - customerOrder.OfferPrice) * 0.09);
-                //customerOrder.TaxValue = 9;                
-                customerOrder.TaxPrice = 0;
-                customerOrder.TaxValue = 9;
-                customerOrder.FinalPrice = customerOrder.OrderPrice + customerOrder.TaxPrice;
+                customerOrder.FinalPrice = customerOrder.OrderPrice;
 
-                customerOrder.CustomerOrderProduct = orerProductList;
+                customerOrder.ProductList = orerProductList;
                 var toCityId = _repository.CustomerAddress.FindByCondition(c => c.Id == order.CustomerAddressId).Include(c => c.City).Select(c => c.City.PostCode).FirstOrDefault();
 
                 var post = new PostServiceProvider();
@@ -298,13 +284,7 @@ namespace HandCarftBaseServer.Controllers
                 customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
 
 
-                var result = new OrderPreViewResultDto
-                {
-                   Order=customerOrder,
-                   ProductsList= orerProductList
-                };
-
-                return SingleResult<OrderPreViewResultDto>.GetSuccessfulResult(result);
+                return SingleResult<OrderPreViewResultDto>.GetSuccessfulResult(customerOrder);
 
 
             }

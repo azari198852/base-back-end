@@ -44,12 +44,7 @@ namespace HandCarftBaseServer.Controllers
                         c.Price,
                         ColorName = c.Color.Name
                     }).ToList();
-                if (result.Count == 0)
-                {
-
-                    return NotFound();
-                }
-
+               
                 return Ok(result);
             }
             catch (Exception e)

@@ -45,12 +45,7 @@ namespace HandCarftBaseServer.Controllers
                         c.Price,
                         PackingName = c.PackinggType.Name
                     }).ToList();
-                if (result.Count == 0)
-                {
-
-                    return NotFound();
-                }
-
+               
                 return Ok(result);
             }
             catch (Exception e)
