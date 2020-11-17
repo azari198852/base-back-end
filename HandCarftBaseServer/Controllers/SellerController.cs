@@ -34,7 +34,7 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                var res = _repository.Seller.FindByCondition(c => c.DaUserId == null && c.DuserId == null)
+                var res = _repository.Seller.FindByCondition(c => c.DaDate == null && c.Ddate == null)
                     .ToList();
 
                 return Ok(res);
@@ -52,7 +52,7 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                var res = _repository.Seller.FindByCondition(c => c.DaUserId == null && c.DuserId == null).Include(c => c.FinalStatus).Select(c => new
+                var res = _repository.Seller.FindByCondition(c => c.DaDate == null && c.Ddate == null).Include(c => c.FinalStatus).Select(c => new
                 {
                     c.Id,
                     c.SellerCode,

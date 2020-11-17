@@ -67,6 +67,7 @@ namespace HandCarftBaseServer.Controllers
                       .Include(c => c.Customer)
                       .Include(c => c.FinalStatus)
                       .Include(c => c.CustomerOrderProduct)
+                      .Include(c => c.CustomerOrderPayment).ThenInclude(c => c.FinalStatus)
                       .Select(c => new
                       {
                           c.Id,
@@ -76,6 +77,7 @@ namespace HandCarftBaseServer.Controllers
                           CustomerName = c.Customer.Name + " " + c.Customer.Fname,
                           c.FinalPrice,
                           Status = c.FinalStatus.Name,
+                          PaymentStatus = c.CustomerOrderPayment.OrderByDescending(u => u.Id).Select(x=>x.FinalStatus.Name).FirstOrDefault(),
                           Editable = c.CustomerOrderProduct.All(x => x.FinalStatusId == 23)
                       }).OrderByDescending(c => c.Id).ToList();
                 return Ok(res);
@@ -215,7 +217,7 @@ namespace HandCarftBaseServer.Controllers
                 var orerProductList = new List<CustomerOrderProduct>();
 
 
-        
+
                 order.ProductList.ForEach(c =>
                 {
                     var product = _repository.Product.FindByCondition(x => x.Id == c.ProductId).First();
@@ -250,7 +252,7 @@ namespace HandCarftBaseServer.Controllers
                 var offer = _repository.Offer.FindByCondition(c => c.Id == order.OfferId).FirstOrDefault();
                 var paking = _repository.PackingType.FindByCondition(c => c.Id == order.PaymentTypeId).FirstOrDefault();
                 var customerOrder = new OrderPreViewResultDto();
-   
+
                 customerOrder.OrderPrice = orerProductList.Sum(c =>
                     (c.ProductPrice + c.PackingPrice - c.ProductOfferPrice) * c.OrderCount);
                 customerOrder.OfferPrice =
@@ -261,7 +263,7 @@ namespace HandCarftBaseServer.Controllers
                 customerOrder.PaymentTypeId = order.PaymentTypeId;
                 customerOrder.PostServicePrice = 0;
 
-                customerOrder.FinalPrice = customerOrder.OrderPrice;
+
 
                 customerOrder.ProductList = orerProductList;
                 var toCityId = _repository.CustomerAddress.FindByCondition(c => c.Id == order.CustomerAddressId).Include(c => c.City).Select(c => c.City.PostCode).FirstOrDefault();
@@ -282,7 +284,7 @@ namespace HandCarftBaseServer.Controllers
                 var postresult = post.GetDeliveryPrice(postpriceparam).Result;
                 if (postresult.ErrorCode != 0) return SingleResult<OrderPreViewResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
                 customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
-
+                customerOrder.FinalPrice = customerOrder.OrderPrice + customerOrder.PostServicePrice;
 
                 return SingleResult<OrderPreViewResultDto>.GetSuccessfulResult(customerOrder);
 
@@ -388,7 +390,7 @@ namespace HandCarftBaseServer.Controllers
                 //customerOrder.TaxValue = 9;                
                 customerOrder.TaxPrice = 0;
                 customerOrder.TaxValue = 9;
-                customerOrder.FinalPrice = customerOrder.OrderPrice + customerOrder.TaxPrice;
+
 
                 customerOrder.CustomerOrderProduct = orerProductList;
                 var toCityId = _repository.CustomerAddress.FindByCondition(c => c.Id == order.CustomerAddressId).Include(c => c.City).Select(c => c.City.PostCode).FirstOrDefault();
@@ -409,6 +411,7 @@ namespace HandCarftBaseServer.Controllers
                 var postresult = post.GetDeliveryPrice(postpriceparam).Result;
                 if (postresult.ErrorCode != 0) return SingleResult<InsertOrderResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
                 customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
+                customerOrder.FinalPrice = customerOrder.OrderPrice + customerOrder.TaxPrice + customerOrder.PostServicePrice;
                 _repository.CustomerOrder.Create(customerOrder);
 
 
@@ -532,6 +535,8 @@ namespace HandCarftBaseServer.Controllers
                 {
                     return SingleResult<string>.GetFailResult("اطلاعاتی برای پارامترهای ارسالی یافت نشد.");
                 }
+
+
                 var customerOrderId = orderpeymnt.CustomerOrderId;
                 var customer = _repository.CustomerOrder.FindByCondition(c => c.Id == customerOrderId)
                     .Include(c => c.Customer).Select(c => c.Customer).First();
@@ -568,7 +573,7 @@ namespace HandCarftBaseServer.Controllers
                         c.Count = c.Count--;
                         _repository.Product.Update(c);
                     });
-                  
+
 
                     var sellerList = _repository.CustomerOrderProduct.FindByCondition(c => c.CustomerOrderId == customerOrderId).Select(c => c.Seller.Mobile).ToList();
 
@@ -583,6 +588,7 @@ namespace HandCarftBaseServer.Controllers
 
 
                     });
+
 
                     _repository.Save();
 

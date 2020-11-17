@@ -28,6 +28,8 @@ namespace HandCarftBaseServer
 
             CreateMap<CatProduct, CatProductDto>();
             CreateMap<CatProductDto, CatProduct>();
+            CreateMap<CatProduct, CatProductWithCountDto>()
+                .ForMember(u => u.ProductCount, opt => opt.MapFrom(x => x.Product.Count));
 
 
             #endregion

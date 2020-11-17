@@ -345,16 +345,7 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
-        [HttpGet]
-        [Route("CatProduct/GetCatProductListByParentId")]
-        public IActionResult GetCatProductListByParentId(long catId)
-        {
-            var catProduct = _repository.CatProduct.FindByCondition(c => c.Pid == catId)
-                .Include(c => c.InverseP).ToList();
 
-
-            return Ok(catProduct);
-        }
 
         [HttpGet]
         [Route("CatProduct/GetCatProductListForCmb")]
@@ -392,6 +383,58 @@ namespace HandCarftBaseServer.Controllers
 
 
         /// <summary>
+        ///لیست دسته بندی های اصلی 
+        /// </summary>
+        [HttpGet]
+        [Route("CatProduct/GetMainCatProductList_UI")]
+        public ListResult<CatProductWithCountDto> GetMainCatProductList_UI()
+        {
+            try
+            {
+                var catProduct = _repository.CatProduct.FindByCondition(c => c.DaDate == null && c.Ddate == null && c.Pid == null)
+                    .Include(c => c.Product)
+                    .OrderByDescending(c => c.Product.Count).ToList();
+
+                var result = _mapper.Map<List<CatProductWithCountDto>>(catProduct);
+
+                var finalresult = ListResult<CatProductWithCountDto>.GetSuccessfulResult(result);
+                return finalresult;
+            }
+            catch (Exception e)
+            {
+                return ListResult<CatProductWithCountDto>.GetFailResult(null);
+            }
+
+        }
+
+        /// <summary>
+        ///لیست دسته بندی های براساس آیدی پدر 
+        /// </summary>
+        [HttpGet]
+        [Route("CatProduct/GetCatProductListByParentId_UI")]
+        public ListResult<CatProductWithCountDto> GetCatProductListByParentId_UI(long catId)
+        {
+            try
+            {
+
+
+                var catProduct = _repository.CatProduct.FindByCondition(c => c.Pid == catId)
+                    .Include(c => c.Product)
+                    .OrderByDescending(c => c.Product.Count).ToList();
+
+
+                var result = _mapper.Map<List<CatProductWithCountDto>>(catProduct);
+
+                var finalresult = ListResult<CatProductWithCountDto>.GetSuccessfulResult(result);
+                return finalresult;
+            }
+            catch (Exception e)
+            {
+                return ListResult<CatProductWithCountDto>.GetFailResult(e.Message);
+            }
+        }
+
+        /// <summary>
         ///لیست 5 دسته بندی برتر که بیشترین محصول را دارند 
         /// </summary>
         [HttpGet]
@@ -413,7 +456,6 @@ namespace HandCarftBaseServer.Controllers
 
 
         }
-
 
         #endregion
 
