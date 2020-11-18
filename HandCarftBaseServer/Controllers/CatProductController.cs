@@ -217,8 +217,6 @@ namespace HandCarftBaseServer.Controllers
                 _catProduct.DuserId = ClaimPrincipalFactory.GetUserId(User);
                 _repository.CatProduct.Update(_catProduct);
 
-
-
                 _repository.Save();
                 return NoContent();
             }
@@ -253,7 +251,7 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                var res = _repository.CatProduct.FindByCondition(c => c.Id == catProductId)
+                var res = _repository.CatProduct.FindByCondition(c => c.Id == catProductId && c.Ddate == null && c.DaDate == null)
                     .Include(c => c.CatProductLanguage).FirstOrDefault();
                 if (res == null) return NotFound();
                 return Ok(res);
@@ -418,7 +416,7 @@ namespace HandCarftBaseServer.Controllers
             {
 
 
-                var catProduct = _repository.CatProduct.FindByCondition(c => c.Pid == catId)
+                var catProduct = _repository.CatProduct.FindByCondition(c => c.Pid == catId && c.DaDate == null && c.Ddate == null)
                     .Include(c => c.Product)
                     .OrderByDescending(c => c.Product.Count).ToList();
 

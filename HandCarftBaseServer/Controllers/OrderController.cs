@@ -135,7 +135,7 @@ namespace HandCarftBaseServer.Controllers
                         PaymentStatus = c.CustomerOrderPayment.OrderByDescending(x => x.Id)
                             .Select(x => x.FinalStatus.Name).FirstOrDefault(),
                         Address = c.CustomerAddress.Province.Name + " - " + c.CustomerAddress.City.Name + " - " +
-                                  c.CustomerAddress.Titel
+                                  c.CustomerAddress.Address
 
                     }).FirstOrDefault();
                 var result = new { Order = order, Orderproduct = orderproduct };
