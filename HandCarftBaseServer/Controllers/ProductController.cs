@@ -9,6 +9,7 @@ using Contracts;
 using Entities.BusinessModel;
 using Entities.DataTransferObjects;
 using Entities.Models;
+using Entities.Params;
 using Entities.UIResponse;
 using HandCarftBaseServer.Tools;
 using Microsoft.AspNetCore.Authorization;
@@ -430,7 +431,7 @@ namespace HandCarftBaseServer.Controllers
         /// <summary>
         ///لیست  محصولات با صفحه بندی و فیلتر
         /// </summary>
-        /// <param name="sortMethod">
+        /// <param name="filter.sortMethod">
         /// 1: مرتب سازی بر اساس جدیدترین(پیشفرض )
         /// 2: مرتب سازی بر اساس امتیاز
         /// 3: مرتب سازی بر اساس پرفروشترین
@@ -438,27 +439,27 @@ namespace HandCarftBaseServer.Controllers
         /// 5: مرتب سازی بر اساس گرانترین
         /// 6: دارای نشان ملی
         /// </param>
-        /// <param name="catProductId">
+        /// <param name="filter.catProductId">
         /// آیدی دسته بندی محصول
         /// </param>
-        ///  /// <param name="productName">
+        ///  /// <param name="filter.productName">
         /// نام محصول 
         /// </param>
-        /// <param name="minPrice">
+        /// <param name="filter.minPrice">
         /// حداقل قیمت 
         /// </param>
-        ///  <param name="maxPrice">
+        ///  <param name="filter.maxPrice">
         /// حداکثر قیمت 
         /// </param>
-        /// <param name="pageSize">
+        /// <param name="filter.pageSize">
         /// سایز صفحه بندی 
         /// </param>
-        /// <param name="pageNumber">
+        /// <param name="filter.pageNumber">
         /// شماره صفحه  
         /// </param>
-        [HttpGet]
+        [HttpPost]
         [Route("Product/GetProductList_Paging_Filtering_UI")]
-        public SingleResult<ProductListDto> GetProductList_Paging_Filtering_UI(long? catProductId, string productName, long? minPrice, long? maxPrice, short sortMethod, int pageSize, int pageNumber)
+        public SingleResult<ProductListDto> GetProductList_Paging_Filtering_UI(ProductListParam filter)
         {
             try
             {
@@ -466,84 +467,90 @@ namespace HandCarftBaseServer.Controllers
                 int totalcount = 0;
                 long? MinPrice = 0;
                 long? MaxPrice = 0;
-                switch (sortMethod)
+                switch (filter.SortMethod)
                 {
 
                     case 2:
                         res = _repository.Product.GetProductListFullInfo()
-                            .Where(c => (productName == null || c.Name.Contains(productName)) &&
-                                        (c.CatProductId == catProductId || catProductId == null) &&
-                                        (minPrice < c.Price || minPrice == null) &&
-                                        (c.Price < maxPrice || maxPrice == null))
+                            .Where(c => (filter.ProductName == null || c.Name.Contains(filter.ProductName)) &&
+                                        (c.CatProductId == filter.CatProductId || filter.CatProductId == null) &&
+                                        (filter.MinPrice <= c.Price || filter.MinPrice == null) &&
+                                        (c.Price <= filter.MaxPrice || filter.MaxPrice == null) &&
+                                        (filter.SellerIdList.Contains(c.SellerId.Value) || filter.SellerIdList.Count == 0))
                             .OrderByDescending(c => c.ProductCustomerRate.Average(x => x.Rate)).ToList();
                         MinPrice = res.Min(c => c.Price);
                         MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
-                        res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                        res = res.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToList();
                         break;
 
                     case 3:
                         res = _repository.Product.GetProductListFullInfo()
-                            .Where(c => (productName == null || c.Name.Contains(productName)) &&
-                                        (c.CatProductId == catProductId || catProductId == null) &&
-                                        (minPrice < c.Price || minPrice == null) &&
-                                        (c.Price < maxPrice || maxPrice == null))
+                            .Where(c => (filter.ProductName == null || c.Name.Contains(filter.ProductName)) &&
+                                        (c.CatProductId == filter.CatProductId || filter.CatProductId == null) &&
+                                        (filter.MinPrice <= c.Price || filter.MinPrice == null) &&
+                                        (c.Price <= filter.MaxPrice || filter.MaxPrice == null) &&
+                                        (filter.SellerIdList.Contains(c.SellerId.Value) || filter.SellerIdList.Count == 0))
                             .OrderByDescending(c => c.CustomerOrderProduct.Count()).ToList();
                         MinPrice = res.Min(c => c.Price);
                         MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
-                        res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                        res = res.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToList();
                         break;
 
                     case 4:
                         res = _repository.Product.GetProductListFullInfo()
-                            .Where(c => (productName == null || c.Name.Contains(productName)) &&
-                                        (c.CatProductId == catProductId || catProductId == null) &&
-                                        (minPrice < c.Price || minPrice == null) &&
-                                        (c.Price < maxPrice || maxPrice == null))
+                            .Where(c => (filter.ProductName == null || c.Name.Contains(filter.ProductName)) &&
+                                        (c.CatProductId == filter.CatProductId || filter.CatProductId == null) &&
+                                        (filter.MinPrice <= c.Price || filter.MinPrice == null) &&
+                                        (c.Price <= filter.MaxPrice || filter.MaxPrice == null) &&
+                                        (filter.SellerIdList.Contains(c.SellerId.Value) || filter.SellerIdList.Count == 0))
                             .OrderBy(c => c.Price).ToList();
                         MinPrice = res.Min(c => c.Price);
                         MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
-                        res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                        res = res.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToList();
                         break;
 
                     case 5:
                         res = _repository.Product.GetProductListFullInfo()
-                            .Where(c => (productName == null || c.Name.Contains(productName)) &&
-                                        (c.CatProductId == catProductId || catProductId == null) &&
-                                        (minPrice < c.Price || minPrice == null) &&
-                                        (c.Price < maxPrice || maxPrice == null))
+                            .Where(c => (filter.ProductName == null || c.Name.Contains(filter.ProductName)) &&
+                                        (c.CatProductId == filter.CatProductId || filter.CatProductId == null) &&
+                                        (filter.MinPrice <= c.Price || filter.MinPrice == null) &&
+                                        (c.Price <= filter.MaxPrice || filter.MaxPrice == null) &&
+                                        (filter.SellerIdList.Contains(c.SellerId.Value) || filter.SellerIdList.Count == 0))
                             .OrderByDescending(c => c.Price).ToList();
                         MinPrice = res.Min(c => c.Price);
                         MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
-                        res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                        res = res.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToList();
                         break;
 
                     case 6:
                         res = _repository.Product.GetProductListFullInfo()
-                            .Where(c => (productName == null || c.Name.Contains(productName)) &&
-                                        (c.CatProductId == catProductId || catProductId == null) &&
-                                        (minPrice < c.Price || minPrice == null) &&
-                                        (c.Price < maxPrice || maxPrice == null) && c.MelliFlag == true)
+                            .Where(c => (filter.ProductName == null || c.Name.Contains(filter.ProductName)) &&
+                                        (c.CatProductId == filter.CatProductId || filter.CatProductId == null) &&
+                                        (filter.MinPrice <= c.Price || filter.MinPrice == null) &&
+                                        (c.Price <= filter.MaxPrice || filter.MaxPrice == null) &&
+                                        (filter.SellerIdList.Contains(c.SellerId.Value) || filter.SellerIdList.Count == 0))
                             .OrderByDescending(c => c.Cdate).ToList();
                         MinPrice = res.Min(c => c.Price);
                         MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
-                        res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                        res = res.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToList();
                         break;
                     default:
                         res = _repository.Product.GetProductListFullInfo()
-                            .Where(c => (productName == null || c.Name.Contains(productName)) &&
-                                        (c.CatProductId == catProductId || catProductId == null) &&
-                                        (minPrice < c.Price || minPrice == null) &&
-                                        (c.Price < maxPrice || maxPrice == null))
-                            .OrderByDescending(c => c.Cdate).ToList();
+                            .Where(c => (filter.ProductName == null || c.Name.Contains(filter.ProductName)) &&
+                                        (c.CatProductId == filter.CatProductId || filter.CatProductId == null) &&
+                                        (filter.MinPrice <= c.Price || filter.MinPrice == null) &&
+                                        (c.Price <= filter.MaxPrice || filter.MaxPrice == null) &&
+                                        (filter.SellerIdList.Contains(c.SellerId.Value) || filter.SellerIdList.Count == 0))
+                             .OrderByDescending(c => c.Cdate).ToList();
                         MinPrice = res.Min(c => c.Price);
                         MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
-                        res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                        res = res.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToList();
                         break;
 
                 }
@@ -903,6 +910,7 @@ namespace HandCarftBaseServer.Controllers
                         Status = c.FinalStatus.Name,
                         c.FinalStatusId,
                         c.Coding,
+                        c.Count,
                         c.Price,
                         c.Weight,
                         c.ProduceDuration,
@@ -937,6 +945,7 @@ namespace HandCarftBaseServer.Controllers
                 product.Price = sellerProductUpdateModel.Price;
                 product.ProducePrice = sellerProductUpdateModel.ProducePrice;
                 product.ProduceDuration = sellerProductUpdateModel.ProduceDuration;
+                product.Count= sellerProductUpdateModel.Count;
                 product.FinalStatusId = 8;
                 _repository.Product.Update(product);
                 _repository.Save();
