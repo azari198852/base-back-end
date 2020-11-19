@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
@@ -268,22 +269,33 @@ namespace HandCarftBaseServer.Controllers
                 customerOrder.ProductList = orerProductList;
                 var toCityId = _repository.CustomerAddress.FindByCondition(c => c.Id == order.CustomerAddressId).Include(c => c.City).Select(c => c.City.PostCode).FirstOrDefault();
 
-                var post = new PostServiceProvider();
+               
                 var postType = _repository.PostType.FindByCondition(c => c.Id == order.PostTypeId).FirstOrDefault();
                 var payType = _repository.PaymentType.FindByCondition(c => c.Id == order.PaymentTypeId)
                     .FirstOrDefault();
-                var postpriceparam = new PostGetDeliveryPriceParam
+                if (postType.IsFree.Value)
                 {
-                    Price = (int)customerOrder.OrderPrice.Value,
-                    Weight = (int)customerOrder.FinalWeight.Value,
-                    ServiceType = postType?.Rkey ?? 2,// (int)customerOrder.PostTypeId,
-                    ToCityId = (int)toCityId,
-                    PayType = (int)(payType?.Rkey ?? 88)
+                    customerOrder.PostServicePrice = 0;
+                }
+                else
+                {
+                    var post = new PostServiceProvider();
+                    var postpriceparam = new PostGetDeliveryPriceParam
+                    {
+                        Price = (int)customerOrder.OrderPrice.Value,
+                        Weight = (int)customerOrder.FinalWeight.Value,
+                        ServiceType = postType?.Rkey ?? 2,// (int)customerOrder.PostTypeId,
+                        ToCityId = (int)toCityId,
+                        PayType = (int)(payType?.Rkey ?? 88)
 
-                };
-                var postresult = post.GetDeliveryPrice(postpriceparam).Result;
-                if (postresult.ErrorCode != 0) return SingleResult<OrderPreViewResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
-                customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
+                    };
+                    var postresult = post.GetDeliveryPrice(postpriceparam).Result;
+                    if (postresult.ErrorCode != 0) return SingleResult<OrderPreViewResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
+                    customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
+
+                }
+
+
                 customerOrder.FinalPrice = customerOrder.OrderPrice + customerOrder.PostServicePrice;
 
                 return SingleResult<OrderPreViewResultDto>.GetSuccessfulResult(customerOrder);
@@ -395,22 +407,34 @@ namespace HandCarftBaseServer.Controllers
                 customerOrder.CustomerOrderProduct = orerProductList;
                 var toCityId = _repository.CustomerAddress.FindByCondition(c => c.Id == order.CustomerAddressId).Include(c => c.City).Select(c => c.City.PostCode).FirstOrDefault();
 
-                var post = new PostServiceProvider();
+              
                 var postType = _repository.PostType.FindByCondition(c => c.Id == order.PostTypeId).FirstOrDefault();
                 var payType = _repository.PaymentType.FindByCondition(c => c.Id == order.PaymentTypeId)
                     .FirstOrDefault();
-                var postpriceparam = new PostGetDeliveryPriceParam
-                {
-                    Price = (int)customerOrder.OrderPrice.Value,
-                    Weight = (int)customerOrder.FinalWeight.Value,
-                    ServiceType = postType?.Rkey ?? 2,// (int)customerOrder.PostTypeId,
-                    ToCityId = (int)toCityId,
-                    PayType = (int)(payType?.Rkey ?? 88)
 
-                };
-                var postresult = post.GetDeliveryPrice(postpriceparam).Result;
-                if (postresult.ErrorCode != 0) return SingleResult<InsertOrderResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
-                customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
+                if (postType.IsFree.Value)
+                {
+                    customerOrder.PostServicePrice = 0;
+                }
+                else
+                {
+                    var post = new PostServiceProvider();
+                    var postpriceparam = new PostGetDeliveryPriceParam
+                    {
+                        Price = (int)customerOrder.OrderPrice.Value,
+                        Weight = (int)customerOrder.FinalWeight.Value,
+                        ServiceType = postType?.Rkey ?? 2,// (int)customerOrder.PostTypeId,
+                        ToCityId = (int)toCityId,
+                        PayType = (int)(payType?.Rkey ?? 88)
+
+                    };
+                    var postresult = post.GetDeliveryPrice(postpriceparam).Result;
+                    if (postresult.ErrorCode != 0) return SingleResult<InsertOrderResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
+                    customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
+
+                }
+
+
                 customerOrder.FinalPrice = customerOrder.OrderPrice + customerOrder.TaxPrice + customerOrder.PostServicePrice;
                 _repository.CustomerOrder.Create(customerOrder);
 
