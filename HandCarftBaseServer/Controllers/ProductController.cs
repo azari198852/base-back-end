@@ -59,7 +59,7 @@ namespace HandCarftBaseServer.Controllers
 
 
                     })
-                    .OrderByDescending(c=>c.Id).ToList());
+                    .OrderByDescending(c => c.Id).ToList());
             }
             catch (Exception e)
             {
@@ -458,12 +458,14 @@ namespace HandCarftBaseServer.Controllers
         /// </param>
         [HttpGet]
         [Route("Product/GetProductList_Paging_Filtering_UI")]
-        public ListResult<ProductDto> GetProductList_Paging_Filtering_UI(long? catProductId, string productName, long? minPrice, long? maxPrice, short sortMethod, int pageSize, int pageNumber)
+        public SingleResult<ProductListDto> GetProductList_Paging_Filtering_UI(long? catProductId, string productName, long? minPrice, long? maxPrice, short sortMethod, int pageSize, int pageNumber)
         {
             try
             {
                 List<Product> res = new List<Product>();
                 int totalcount = 0;
+                long? MinPrice = 0;
+                long? MaxPrice = 0;
                 switch (sortMethod)
                 {
 
@@ -474,6 +476,8 @@ namespace HandCarftBaseServer.Controllers
                                         (minPrice < c.Price || minPrice == null) &&
                                         (c.Price < maxPrice || maxPrice == null))
                             .OrderByDescending(c => c.ProductCustomerRate.Average(x => x.Rate)).ToList();
+                        MinPrice = res.Min(c => c.Price);
+                        MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
                         res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
                         break;
@@ -485,6 +489,8 @@ namespace HandCarftBaseServer.Controllers
                                         (minPrice < c.Price || minPrice == null) &&
                                         (c.Price < maxPrice || maxPrice == null))
                             .OrderByDescending(c => c.CustomerOrderProduct.Count()).ToList();
+                        MinPrice = res.Min(c => c.Price);
+                        MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
                         res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
                         break;
@@ -496,6 +502,8 @@ namespace HandCarftBaseServer.Controllers
                                         (minPrice < c.Price || minPrice == null) &&
                                         (c.Price < maxPrice || maxPrice == null))
                             .OrderBy(c => c.Price).ToList();
+                        MinPrice = res.Min(c => c.Price);
+                        MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
                         res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
                         break;
@@ -507,6 +515,8 @@ namespace HandCarftBaseServer.Controllers
                                         (minPrice < c.Price || minPrice == null) &&
                                         (c.Price < maxPrice || maxPrice == null))
                             .OrderByDescending(c => c.Price).ToList();
+                        MinPrice = res.Min(c => c.Price);
+                        MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
                         res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
                         break;
@@ -518,6 +528,8 @@ namespace HandCarftBaseServer.Controllers
                                         (minPrice < c.Price || minPrice == null) &&
                                         (c.Price < maxPrice || maxPrice == null) && c.MelliFlag == true)
                             .OrderByDescending(c => c.Cdate).ToList();
+                        MinPrice = res.Min(c => c.Price);
+                        MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
                         res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
                         break;
@@ -528,22 +540,31 @@ namespace HandCarftBaseServer.Controllers
                                         (minPrice < c.Price || minPrice == null) &&
                                         (c.Price < maxPrice || maxPrice == null))
                             .OrderByDescending(c => c.Cdate).ToList();
+                        MinPrice = res.Min(c => c.Price);
+                        MaxPrice = res.Max(c => c.Price);
                         totalcount = res.Count;
                         res = res.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
                         break;
 
                 }
 
+                ProductListDto result = new ProductListDto
+                {
+                    MaxPrice = MaxPrice,
+                    MinPrice = MinPrice,
+                    TotalCount = totalcount,
+                    ProductList = _mapper.Map<List<ProductDto>>(res)
+                };
 
-                var result = _mapper.Map<List<ProductDto>>(res);
 
-                var finalresult = ListResult<ProductDto>.GetSuccessfulResult(result, totalcount);
+
+                var finalresult = SingleResult<ProductListDto>.GetSuccessfulResult(result);
                 return finalresult;
 
             }
             catch (Exception e)
             {
-                return ListResult<ProductDto>.GetFailResult(null);
+                return SingleResult<ProductListDto>.GetFailResult(null);
 
             }
         }
@@ -659,7 +680,7 @@ namespace HandCarftBaseServer.Controllers
             {
 
                 var res = _repository.ProductPackingType.FindByCondition(c => c.Ddate == null && c.DaDate == null && c.ProductId == productId)
-                    .Include(c => c.ProductPackingTypeImage).ToList();
+                    .Include(c => c.ProductPackingTypeImage).Include(c => c.PackinggType).ToList();
 
                 var result = _mapper.Map<List<ProductPackingTypeDto>>(res);
                 var finalresult = ListResult<ProductPackingTypeDto>.GetSuccessfulResult(result);
@@ -886,7 +907,7 @@ namespace HandCarftBaseServer.Controllers
                         c.Weight,
                         c.ProduceDuration,
                         c.ProducePrice,
-                        
+
 
                     })
                     .ToList());

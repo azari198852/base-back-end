@@ -319,6 +319,20 @@ namespace HandCarftBaseServer
             CreateMap<DocumentDto, Document>();
             #endregion
 
+            #region Work
+
+            CreateMap<Work, WorkDto>();
+            CreateMap<WorkDto, Work>();
+
+            #endregion
+
+            #region Customer
+
+            CreateMap<CustomerProfileDto, Customer>();
+            CreateMap<Customer, CustomerProfileDto>();
+
+            #endregion
+
         }
     }
 }

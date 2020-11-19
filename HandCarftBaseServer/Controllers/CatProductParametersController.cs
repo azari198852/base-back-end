@@ -69,7 +69,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var selectedList = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && c.ParametersId != null)
+                var selectedList = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && c.ParametersId != null && c.Ddate == null && c.DaDate == null)
                     .Select(c => c.ParametersId.Value).ToList();
 
                 
@@ -92,7 +92,7 @@ namespace HandCarftBaseServer.Controllers
                 var list = _repository.Parameter.FindByCondition(c => c.DaDate == null && c.Ddate == null).ToList();
                 var fatherlist = list.Where(c => c.Pid == null).ToList();
 
-                var selectedList = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && c.ParametersId != null)
+                var selectedList = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && c.ParametersId != null && c.Ddate == null && c.DaDate == null)
                     .Select(c => c.ParametersId.Value).ToList();
 
                 var str = "[";
@@ -124,7 +124,7 @@ namespace HandCarftBaseServer.Controllers
 
         private string GetSecondNodes(List<Parameters> mainlist, List<long> selectedList, long? pid)
         {
-            var list = mainlist.Where(c => c.Pid == pid).ToList();
+            var list = mainlist.Where(c => c.Pid == pid && c.Ddate == null && c.DaDate == null).ToList();
             var str = "";
             if (list.Count > 0)
             {

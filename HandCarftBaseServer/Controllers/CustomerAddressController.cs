@@ -43,7 +43,7 @@ namespace HandCarftBaseServer.Controllers
             {
                 var userId = ClaimPrincipalFactory.GetUserId(User);
                 var address = _repository.CustomerAddress
-                    .FindByCondition(c => c.Customer.UserId == userId && c.DefualtAddress == true).Include(c => c.City).Include(c => c.Province).FirstOrDefault();
+                    .FindByCondition(c => c.Customer.UserId == userId && c.DefualtAddress == true && c.Ddate == null && c.DaDate == null).Include(c => c.City).Include(c => c.Province).FirstOrDefault();
                 if (address == null) return SingleResult<CustomerAddressDto>.GetFailResult("آدرس پیشفرضی یافت نشد!");
 
                 var result = _mapper.Map<CustomerAddressDto>(address);

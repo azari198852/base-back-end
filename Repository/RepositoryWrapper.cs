@@ -63,6 +63,7 @@ namespace Repository
         private ICatDocumentRepositry _catDocument;
         private IDocumentRepository _document;
         private ISellerDocumentRepository _sellerDocument;
+        private IWorkRepository _work;
 
 
         public IApiRepository Api => _api ??= new ApiRepository(_repoContext);
@@ -119,6 +120,7 @@ namespace Repository
         public ICatDocumentRepositry CatDocument => _catDocument ??= new CatDocumentRepositry(_repoContext);
         public IDocumentRepository Document => _document ??= new DocumentRepository(_repoContext);
         public ISellerDocumentRepository SellerDocument => _sellerDocument ??= new SellerDocumentRepository(_repoContext);
+        public IWorkRepository Work => _work ??= new WorkRepository(_repoContext);
         public RepositoryWrapper(BaseContext repositoryContext)
         {
             _repoContext = repositoryContext;

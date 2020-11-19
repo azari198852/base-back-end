@@ -653,7 +653,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
                 var userId = ClaimPrincipalFactory.GetUserId(User);
-                var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).Select(c => c.Id)
+                var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).OrderByDescending(c=>c.Cdate).Select(c => c.Id)
                     .FirstOrDefault();
                 var res = _repository.CustomerOrder.GetCustomerOrderList(customerId, finalStatusId);
                 var result = _mapper.Map<List<CustomerOrderDto>>(res);

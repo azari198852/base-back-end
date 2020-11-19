@@ -300,7 +300,7 @@ namespace HandCarftBaseServer.Controllers
 
         private string GetSecondNode(List<CatProduct> mainlist, long? pid)
         {
-            var list = mainlist.Where(c => c.Pid == pid).ToList();
+            var list = mainlist.Where(c => c.Pid == pid && c.Ddate == null && c.DaDate == null).ToList();
             var str = "";
             if (list.Count > 0)
             {
@@ -329,7 +329,7 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                var catProduct = _repository.CatProduct.FindAll()
+                var catProduct = _repository.CatProduct.FindByCondition(c => c.Ddate == null && c.DaDate == null)
                     .OrderByDescending(c => c.Product.Count)
                     .Select(c => new { c.Id, c.Name }).ToList().Take(7);
 
@@ -367,7 +367,7 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                var catProduct = _repository.CatProduct.FindByCondition(c => c.Ddate == null && c.DaDate == null).Include(c => c.InverseP).ToList();
+                var catProduct = _repository.CatProduct.FindByCondition(c => c.Ddate == null && c.DaDate == null && c.Pid == null).Include(c => c.InverseP).ToList();
                 var finalresult = ListResult<CatProduct>.GetSuccessfulResult(catProduct);
                 return finalresult;
 
@@ -441,7 +441,7 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                var catProduct = _repository.CatProduct.FindByCondition(c => c.DaDate == null && c.Ddate == null).OrderByDescending(c => c.Product.Count).Take(5).ToList();
+                var catProduct = _repository.CatProduct.FindByCondition(c => c.DaDate == null && c.Ddate == null && (c.Id == 2 || c.Id == 44 || c.Id == 45 || c.Id == 73 || c.Id == 75)).OrderByDescending(c => c.Product.Count).Take(5).ToList();
 
                 var finalresult = ListResult<CatProduct>.GetSuccessfulResult(catProduct);
                 return finalresult;

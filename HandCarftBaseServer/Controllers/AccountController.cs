@@ -12,6 +12,7 @@ using Entities.DataTransferObjects;
 using Entities.Models;
 using Entities.UIResponse;
 using HandCarftBaseServer.Tools;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -531,6 +532,48 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
+                return VoidResult.GetFailResult(e.Message);
+            }
+
+
+        }
+
+        [Authorize]
+        [HttpPut]
+        [Route("Account/Customer_UpdateProfileInfo")]
+        public VoidResult Customer_UpdateProfileInfo(CustomerProfileDto customerProfileDto)
+        {
+
+            try
+            {
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+                var user = _repository.Users.FindByCondition(c => c.Id == userId).Include(c => c.UserRole).FirstOrDefault();
+                if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+
+                user.FullName = customerProfileDto.Name + " " + customerProfileDto.Fname;
+                user.Email = customerProfileDto.Email;
+                user.Hpassword = customerProfileDto.Password;
+                user.Mobile = customerProfileDto.Mobile;
+                
+                _repository.Users.Update(user);
+
+                var customer = _repository.Customer.FindByCondition(c => c.UserId == userId).FirstOrDefault();
+                customer.Name = customerProfileDto.Name;
+                customer.Fname = customerProfileDto.Fname;
+                customer.MelliCode = customerProfileDto.MelliCode;
+                customer.Bdate = customerProfileDto.Bdate?.Ticks;
+                customer.Mobile = customerProfileDto.Mobile;
+                customer.Email = customerProfileDto.Email;
+                customer.WorkId = customerProfileDto.WorkId;
+                _repository.Customer.Update(customer);
+
+                _repository.Save();
+
+                return VoidResult.GetSuccessResult();
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
                 return VoidResult.GetFailResult(e.Message);
             }
 

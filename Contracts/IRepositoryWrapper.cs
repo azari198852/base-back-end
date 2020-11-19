@@ -61,7 +61,7 @@ namespace Contracts
         ICatDocumentRepositry CatDocument { get; }
         IDocumentRepository Document { get; }
         ISellerDocumentRepository SellerDocument { get; }
-
+        IWorkRepository Work { get; }
         void Save();
     }
 }
