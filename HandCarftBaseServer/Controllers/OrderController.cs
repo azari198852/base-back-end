@@ -312,7 +312,7 @@ namespace HandCarftBaseServer.Controllers
         /// <summary>
         ///ثبت سفارش
         /// </summary>
-        [Authorize]
+     //   [Authorize]
         [HttpPost]
         [Route("Product/InsertCustomerOrder_UI")]
         public SingleResult<InsertOrderResultDto> GetProductByIdList_UI(OrderModel order)
@@ -353,7 +353,7 @@ namespace HandCarftBaseServer.Controllers
                         ProductOfferCode = ofer?.OfferCode,
                         ProductOfferPrice = (long?)(ofer != null ? (ofer.Value / 100 * product.Price) : 0),
                         ProductOfferValue = ofer?.Value,
-                        PackingTypeId = c.PackingTypeId,
+                        PackingTypeId = packingType?.PackinggTypeId,
                         PackingWeight = packingType == null ? 0 : packingType.Weight,
                         PackingPrice = packingType == null ? 0 : packingType.Price,
                         SellerId = product.SellerId,
