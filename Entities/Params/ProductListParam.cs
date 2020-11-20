@@ -11,7 +11,7 @@ namespace Entities.Params
         public string ProductName { get; set; }
         public long? MinPrice { get; set; }
         public long? MaxPrice { get; set; }
-        public short SortMethod { get; set; }
+        public short? SortMethod { get; set; }
         public int PageSize { get; set; }
         public int PageNumber { get; set; }
         public List<long> SellerIdList { get; set; }
