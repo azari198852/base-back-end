@@ -392,7 +392,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c=>c.UserRole).FirstOrDefault();
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
                 if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
                 var now = DateTime.Now.Ticks;
                 if (_repository.UserActivation.FindByCondition(c => c.UserId == user.Id && c.EndDateTime > now && c.LoginType == 2).Any())
@@ -458,11 +458,11 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c=>c.UserRole).FirstOrDefault();
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
                 if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
                 var now = DateTime.Now.Ticks;
                 var s = _repository.UserActivation.FindByCondition(c =>
-                    c.UserId == user.Id && c.EndDateTime >now  && c.SendedCode == code).FirstOrDefault();
+                    c.UserId == user.Id && c.EndDateTime > now && c.SendedCode == code).FirstOrDefault();
                 if (s == null) return VoidResult.GetFailResult("کد وارد شده جهت تغییر کلمه عبور صحیح نمی باشد.");
 
                 user.Hpassword = pass;
@@ -554,7 +554,7 @@ namespace HandCarftBaseServer.Controllers
                 user.Email = customerProfileDto.Email;
                 user.Hpassword = customerProfileDto.Password;
                 user.Mobile = customerProfileDto.Mobile;
-                
+
                 _repository.Users.Update(user);
 
                 var customer = _repository.Customer.FindByCondition(c => c.UserId == userId).FirstOrDefault();
@@ -575,6 +575,33 @@ namespace HandCarftBaseServer.Controllers
             {
                 _logger.LogError(e, e.Message);
                 return VoidResult.GetFailResult(e.Message);
+            }
+
+
+        }
+
+        //  [Authorize]
+        [HttpGet]
+        [Route("Account/Customer_GetProfileInfo")]
+        public SingleResult<CustomerProfileDto> Customer_GetProfileInfo()
+        {
+
+            try
+            {
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+
+                var customer = _repository.Customer.FindByCondition(c => c.UserId == userId).Include(c => c.Work).FirstOrDefault();
+
+                var cust = _mapper.Map<CustomerProfileDto>(customer);
+
+                cust.Password = null;
+
+                return SingleResult<CustomerProfileDto>.GetSuccessfulResult(cust);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return SingleResult<CustomerProfileDto>.GetFailResult(e.Message);
             }
 
 

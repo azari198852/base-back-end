@@ -329,7 +329,10 @@ namespace HandCarftBaseServer
             #region Customer
 
             CreateMap<CustomerProfileDto, Customer>();
-            CreateMap<Customer, CustomerProfileDto>();
+            CreateMap<Customer, CustomerProfileDto>()
+            .ForMember(u => u.Bdate, opt => opt.MapFrom(x => x.Bdate == null ? null : DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)));
+
+
 
             #endregion
 
