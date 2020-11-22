@@ -587,7 +587,7 @@ namespace HandCarftBaseServer.Controllers
             {
 
 
-                var res = _repository.Product.GetProductListFullInfo().Where(c => c.UnescoFlag == true && (c.FinalStatusId == 10 || c.FinalStatusId == 11))
+                var res = _repository.Product.GetProductListFullInfo().Where(c => c.UnescoFlag == true /*&& (c.FinalStatusId == 10 || c.FinalStatusId == 11)*/)
                     .OrderByDescending(c => c.Cdate).Take(10).ToList();
                 var result = _mapper.Map<List<ProductDto>>(res);
 
@@ -613,7 +613,7 @@ namespace HandCarftBaseServer.Controllers
             {
 
 
-                var res = _repository.Product.GetProductListFullInfo().Where(c => c.MelliFlag == true && (c.FinalStatusId == 10 || c.FinalStatusId == 11))
+                var res = _repository.Product.GetProductListFullInfo().Where(c => c.MelliFlag == true /*&& (c.FinalStatusId == 10 || c.FinalStatusId == 11)*/)
                     .OrderByDescending(c => c.Cdate).Take(10).ToList();
                 var result = _mapper.Map<List<ProductDto>>(res);
 
@@ -711,7 +711,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var res = _repository.RelatedProduct.FindByCondition(c => c.Ddate == null && c.DaDate == null && c.OriginProductId == productId && (c.OriginProduct.FinalStatusId==10 || c.OriginProduct.FinalStatusId == 11))
+                var res = _repository.RelatedProduct.FindByCondition(c => c.Ddate == null && c.DaDate == null && c.OriginProductId == productId /*&& (c.OriginProduct.FinalStatusId==10 || c.OriginProduct.FinalStatusId == 11)*/)
                     .Include(c => c.DestinProduct).Select(c => c.DestinProduct).ToList();
 
 
@@ -761,7 +761,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var res = _repository.Product.GetProductListFullInfo().Where(c => c.CatProductId == catProductId && (c.FinalStatusId == 10 || c.FinalStatusId == 11)).ToList();
+                var res = _repository.Product.GetProductListFullInfo().Where(c => c.CatProductId == catProductId /*&& (c.FinalStatusId == 10 || c.FinalStatusId == 11)*/).ToList();
 
                 var result = _mapper.Map<List<ProductDto>>(res);
 
