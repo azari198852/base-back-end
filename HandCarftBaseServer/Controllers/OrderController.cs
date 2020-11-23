@@ -576,7 +576,7 @@ namespace HandCarftBaseServer.Controllers
                 if (result.code == 100 || result.code == 101)
                 {
 
-                    orderpeymnt.FinalStatusId = 24;
+                    orderpeymnt.FinalStatusId = 27;
                     orderpeymnt.RefNum = result.ref_id.ToString();
                     orderpeymnt.TransactionDate = DateTime.Now.Ticks;
                     orderpeymnt.CardPan = result.card_pan;
@@ -598,16 +598,7 @@ namespace HandCarftBaseServer.Controllers
                         _repository.Product.Update(c);
                     });
 
-                    var OrderProduct = _repository.CustomerOrderProduct.FindByCondition(c => c.CustomerOrderId == customerOrderId).ToList();
-                    OrderProduct.ForEach(c =>
-                    {
-
-                        c.FinalStatusId = 27;
-                        _repository.CustomerOrderProduct.Update(c);
-
-                    });
-
-
+                    
                     var sellerList = _repository.CustomerOrderProduct.FindByCondition(c => c.CustomerOrderId == customerOrderId).Select(c => c.Seller.Mobile).ToList();
 
                     sellerList.ForEach(c =>
