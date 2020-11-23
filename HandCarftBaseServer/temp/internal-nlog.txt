@@ -1718,3 +1718,11 @@ Error Number:-2,State:0,Class:11
    at NLog.Targets.DatabaseTarget.OpenConnection(String connectionString, LogEventInfo logEventInfo)
    at NLog.Targets.DatabaseTarget.EnsureConnectionOpen(String connectionString, LogEventInfo logEventInfo)
    at NLog.Targets.DatabaseTarget.WriteLogEventToDatabase(LogEventInfo logEvent, String connectionString)
+2020-11-23 12:13:06.1055 Info Message Template Auto Format enabled
+2020-11-23 12:13:06.1216 Info Loading assembly: NLog.Web.AspNetCore
+2020-11-23 12:13:06.1809 Info Adding target DatabaseTarget(Name=db)
+2020-11-23 12:13:06.2224 Info Validating config: TargetNames=db, ConfigItems=33, FilePath=C:\Users\azari\Desktop\git\990903\service\HandCarftBaseServer\bin\Debug\netcoreapp3.1\NLog.config
+2020-11-23 12:13:06.2978 Info Configuration initialized.
+2020-11-23 12:13:06.2978 Info NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 4.7.5.12092. Product version: 4.7.5+ed343d5690d9c97a96fcff430e240e2d7c31a8d7. GlobalAssemblyCache: False
+2020-11-23 12:13:06.4163 Info AppDomain Shutting down. Logger closing...
+2020-11-23 12:13:06.4339 Info Logger has been shut down.
