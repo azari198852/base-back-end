@@ -392,7 +392,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c=>c.UserRole).FirstOrDefault();
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
                 if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
                 var now = DateTime.Now.Ticks;
                 if (_repository.UserActivation.FindByCondition(c => c.UserId == user.Id && c.EndDateTime > now && c.LoginType == 2).Any())
@@ -458,11 +458,11 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c=>c.UserRole).FirstOrDefault();
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
                 if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
                 var now = DateTime.Now.Ticks;
                 var s = _repository.UserActivation.FindByCondition(c =>
-                    c.UserId == user.Id && c.EndDateTime >now  && c.SendedCode == code).FirstOrDefault();
+                    c.UserId == user.Id && c.EndDateTime > now && c.SendedCode == code).FirstOrDefault();
                 if (s == null) return VoidResult.GetFailResult("کد وارد شده جهت تغییر کلمه عبور صحیح نمی باشد.");
 
                 user.Hpassword = pass;
@@ -554,7 +554,7 @@ namespace HandCarftBaseServer.Controllers
                 user.Email = customerProfileDto.Email;
                 user.Hpassword = customerProfileDto.Password;
                 user.Mobile = customerProfileDto.Mobile;
-                
+
                 _repository.Users.Update(user);
 
                 var customer = _repository.Customer.FindByCondition(c => c.UserId == userId).FirstOrDefault();
@@ -575,6 +575,33 @@ namespace HandCarftBaseServer.Controllers
             {
                 _logger.LogError(e, e.Message);
                 return VoidResult.GetFailResult(e.Message);
+            }
+
+
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("Account/Customer_GetProfileInfo")]
+        public SingleResult<CustomerProfileDto> Customer_GetProfileInfo()
+        {
+
+            try
+            {
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+
+                var customer = _repository.Customer.FindByCondition(c => c.UserId == userId).Include(c => c.Work).FirstOrDefault();
+
+                var cust = _mapper.Map<CustomerProfileDto>(customer);
+
+                cust.Password = null;
+
+                return SingleResult<CustomerProfileDto>.GetSuccessfulResult(cust);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return SingleResult<CustomerProfileDto>.GetFailResult(e.Message);
             }
 
 
@@ -608,7 +635,6 @@ namespace HandCarftBaseServer.Controllers
                             Mobile = mobileNo,
                             Username = mobileNo.ToString(),
                             Cdate = DateTime.Now.Ticks,
-                            Hpassword = code.ToString()
 
                         };
                         _user.UserRole.Add(new UserRole { Role = 3, Cdate = DateTime.Now.Ticks });
@@ -833,6 +859,103 @@ namespace HandCarftBaseServer.Controllers
             catch (Exception e)
             {
                 return VoidResult.GetFailResult(e.Message);
+            }
+
+
+        }
+
+
+
+        /// <summary>
+        /// ثبت نام صنعتگر به سیستم 
+        /// </summary>
+        [HttpPost]
+        [Route("Account/SellerRegister")]
+        public LongResult SellerRegister(SellerRegisterDto input)
+        {
+
+            try
+            {
+                if (input.Mobile == null || string.IsNullOrWhiteSpace(input.Email))
+                {
+                    return LongResult.GetFailResult("شماره موبایل یا ایمیل وارد نشده است");
+                }
+
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == input.Mobile || c.Email == input.Email) && c.UserRole.All(x => x.Role != 3))
+                    .FirstOrDefault();
+
+                if (user == null)
+                {
+                    var _user = new Users
+                    {
+                        Email = input.Email,
+                        Mobile = input.Mobile,
+                        FullName = input.Name + " " + input.Fname,
+                        Hpassword = input.PassWord,
+                        Username = input.Mobile.ToString(),
+                        Cdate = DateTime.Now.Ticks
+
+                    };
+
+                    var userRole = new UserRole
+                    {
+                        Role = 3,
+                        Cdate = DateTime.Now.Ticks,
+
+                    };
+
+                    _user.UserRole.Add(userRole);
+
+                    var seller = new Seller
+                    {
+                        Mobile = input.Mobile,
+                        Email = input.Email,
+                        Fname = input.Name,
+                        MelliCode = input.MelliCode,
+                        Name = input.Fname,
+                        MobileAppTypeId = input.MobileAppTypeId,
+                        HaveMobileApp = input.HaveMobileApp,
+                        RealOrLegal = input.RealOrLegal,
+                        SecondMobile = input.SecondMobile,
+                        ShabaNo = input.ShabaNo,
+                        Tel = input.Tel,
+                        SellerCode = _repository.Seller.FindAll().Max(c => c.SellerCode) + 1,
+                        Cdate = DateTime.Now.Ticks,
+                        Bdate = DateTimeFunc.MiladiToTimeTick(input.Bdate),
+                        FinalStatusId = 14,
+                        MobileAppVersion = input.MobileAppVersion,
+                        Gender = input.Gender,
+                        IdentityNo = input.IdentityNo
+
+                    };
+
+                    var sellerAddress = new SellerAddress
+                    {
+                        Address = input.Address.Address,
+                        Fax = input.Address.Fax,
+                        CityId = input.Address.CityId,
+                        PostalCode = input.Address.PostalCode,
+                        ProvinceId = input.Address.ProvinceId,
+                        Tel = input.Address.Tel,
+                        Titel = input.Address.Titel,
+                        Xgps = input.Address.Xgps,
+                        Ygps = input.Address.Ygps,
+                        Cdate = DateTime.Now.Ticks,
+
+                    };
+                    seller.SellerAddress.Add(sellerAddress);
+                    _user.Seller.Add(seller);
+                    _repository.Users.Create(_user);
+                    _repository.Save();
+                    return LongResult.GetSingleSuccessfulResult(seller.Id);
+                }
+
+                return LongResult.GetFailResult("برای این ایملی و شماره موبایل قبلا ثبت نام انجام شد است");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return LongResult.GetFailResult("خطا در سامانه");
             }
 
 

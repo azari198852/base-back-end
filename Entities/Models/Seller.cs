@@ -21,6 +21,8 @@ namespace Entities.Models
         public string Name { get; set; }
         public string Fname { get; set; }
         public long? MelliCode { get; set; }
+        public string IdentityNo { get; set; }
+        public int? Gender { get; set; }
         public long? Tel { get; set; }
         public long? Mobile { get; set; }
         public long? SecondMobile { get; set; }
