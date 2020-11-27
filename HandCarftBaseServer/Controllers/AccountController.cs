@@ -876,12 +876,12 @@ namespace HandCarftBaseServer.Controllers
 
             try
             {
-                if (input.Mobile == null || string.IsNullOrWhiteSpace(input.Email))
+                if (input.Mobile == null)
                 {
-                    return LongResult.GetFailResult("شماره موبایل یا ایمیل وارد نشده است");
+                    return LongResult.GetFailResult("شماره موبایل  وارد نشده است");
                 }
 
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == input.Mobile || c.Email == input.Email) && c.UserRole.All(x => x.Role != 3))
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == input.Mobile) && c.UserRole.All(x => x.Role != 3))
                     .FirstOrDefault();
 
                 if (user == null)
@@ -950,7 +950,7 @@ namespace HandCarftBaseServer.Controllers
                     return LongResult.GetSingleSuccessfulResult(seller.Id);
                 }
 
-                return LongResult.GetFailResult("برای این ایملی و شماره موبایل قبلا ثبت نام انجام شد است");
+                return LongResult.GetFailResult("برای این شماره موبایل قبلا ثبت نام انجام شد است");
             }
             catch (Exception e)
             {
