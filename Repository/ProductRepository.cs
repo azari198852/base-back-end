@@ -20,7 +20,7 @@ namespace Repository
 
         public List<Product> GetProductListFullInfo()
         {
-            return FindByCondition(c => c.Ddate == null && c.DaDate == null /*&& (c.FinalStatusId == 10 || c.FinalStatusId == 11)*/)
+            return FindByCondition(c => c.Ddate == null && c.DaDate == null)
                   .Include(c => c.CatProduct)
                   .Include(c => c.FinalStatus)
                   .Include(c => c.Seller)

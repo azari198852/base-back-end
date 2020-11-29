@@ -40,7 +40,7 @@ namespace HandCarftBaseServer.Controllers
         {
             try
             {
-                var res = _repository.Document.FindByCondition(c => c.CatDocument.Rkey == rkey && c.Ddate == null && c.DaDate == null).Include(c=>c.CatDocument)
+                var res = _repository.Document.FindByCondition(c => c.CatDocument.Rkey == rkey && c.Ddate == null && c.DaDate == null).Include(c => c.CatDocument)
                     .ToList();
                 var result = _mapper.Map<List<DocumentDto>>(res);
 
@@ -53,15 +53,17 @@ namespace HandCarftBaseServer.Controllers
             }
         }
 
-        [Authorize]
+
         [HttpPost]
         [Route("Document/UploadSellerDocument")]
-        public LongResult UploadSellerDocument(long documentId)
+        public LongResult UploadSellerDocument(long sellerId, long documentId)
         {
             try
             {
-               var userId= ClaimPrincipalFactory.GetUserId(User);
-                var sellerId = _repository.Seller.FindByCondition(c => c.UserId == userId).Select(c => c.Id).FirstOrDefault();
+
+                var userId = _repository.Seller.FindByCondition(c => c.Id == sellerId)
+                    .Include(c => c.User).Select(c => c.UserId)
+                    .FirstOrDefault();
                 var docpath = "";
                 var documentfile = HttpContext.Request.Form.Files.GetFile("Document");
                 if (documentfile != null)
