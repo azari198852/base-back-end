@@ -40,31 +40,24 @@ namespace HandCarftBaseServer.Tools
             return response.IsSuccessful;
         }
 
-        public bool SendSuccessOrderPayment(long mobileNo, string orderNo, long orderId)
+        public bool SendSuccessOrderPayment(long mobileNo, string orderNo, long payment)
         {
 
-            var smsText = "سفارش شما با شماره ";
-            smsText += orderNo;
-            smsText += "در بازارچه اینترنتی صنایع دستی در حال آماده سازی می باشد.";
-            smsText += "\\n";
-            smsText += "tabrizhandicrafts.com/Home/CoustomerOrderTrace/";
-            smsText += orderId;
-            smsText += "\\n";
             var mob = "0" + mobileNo.ToString();
-
 
             var client = new RestClient("http://188.0.240.110/api/select");
             var request = new RestRequest(Method.POST);
             request.AddHeader("cache-control", "no-cache");
             request.AddHeader("Content-Type", "application/json");
-            request.AddParameter("undefined", "{\"op\" : \"send\"" +
-                                              ",\"uname\" : \"09144198583\"" +
-                                              ",\"pass\":  \"1375989081\"" +
-                                              ",\"message\" :" +
-                                              $" \"{smsText}\"" +
-                                              ",\"from\": \" +983000505\"" +
-                                              $",\"to\" : [\"{mob}\"]}}"
-                    , ParameterType.RequestBody);
+            request.AddParameter("undefined", "{\"op\" : \"patternV2\"" +
+                ",\"user\" : \"09144198583\"" +
+                ",\"pass\":  \"1375989081\"" +
+                ",\"fromNum\" : \"+983000505\"" +
+               $",\"toNum\": \"{mob}\"" +
+                ",\"patternCode\": \"veqt898ns1\"" +
+                ",\"inputData\" : {\"order_reference\":" + $"\"{orderNo}\"" + ",\"payment\":" + $"\"{payment}\"" + ",\"total_paid\":" + $"\"{payment}\"" + "}}"
+                , ParameterType.RequestBody);
+
 
             IRestResponse response = client.Execute(request);
             return response.IsSuccessful;
@@ -73,27 +66,21 @@ namespace HandCarftBaseServer.Tools
         public bool SendLoginSms(long mobileNo, int code)
         {
 
-            var smsText = "کد تایید شما برای ورود به ";
-            smsText += "tabrizhandicrafts.com";
-            smsText += "\\n";
-            smsText += "";
-            smsText += code.ToString();
-            smsText += " می باشد.";
-
             var mob = "0" + mobileNo.ToString();
 
             var client = new RestClient("http://188.0.240.110/api/select");
             var request = new RestRequest(Method.POST);
             request.AddHeader("cache-control", "no-cache");
             request.AddHeader("Content-Type", "application/json");
-            request.AddParameter("undefined", "{\"op\" : \"send\"" +
-                                              ",\"uname\" : \"09144198583\"" +
-                                              ",\"pass\":  \"1375989081\"" +
-                                              ",\"message\" :" +
-                                              $" \"{smsText}\"" +
-                                              ",\"from\": \" +983000505\"" +
-                                              $",\"to\" : [\"{mob}\"]}}"
+            request.AddParameter("undefined", "{\"op\" : \"patternV2\"" +
+                ",\"user\" : \"09144198583\"" +
+                ",\"pass\":  \"1375989081\"" +
+                ",\"fromNum\" : \"+983000505\"" +
+               $",\"toNum\": \"{mob}\"" +
+                ",\"patternCode\": \"6658ng6up6\"" +
+                ",\"inputData\" : {\"verification-code\":" + $"\"{code}\"" + "}}"
                 , ParameterType.RequestBody);
+
 
             IRestResponse response = client.Execute(request);
             return response.IsSuccessful;
@@ -111,21 +98,24 @@ namespace HandCarftBaseServer.Tools
 
             var mob = "0" + mobileNo.ToString();
 
+
             var client = new RestClient("http://188.0.240.110/api/select");
             var request = new RestRequest(Method.POST);
             request.AddHeader("cache-control", "no-cache");
             request.AddHeader("Content-Type", "application/json");
-            request.AddParameter("undefined", "{\"op\" : \"send\"" +
-                                              ",\"uname\" : \"09144198583\"" +
-                                              ",\"pass\":  \"1375989081\"" +
-                                              ",\"message\" :" +
-                                              $" \"{smsText}\"" +
-                                              ",\"from\": \" +983000505\"" +
-                                              $",\"to\" : [\"{mob}\"]}}"
+            request.AddParameter("undefined", "{\"op\" : \"patternV2\"" +
+                ",\"user\" : \"09144198583\"" +
+                ",\"pass\":  \"1375989081\"" +
+                ",\"fromNum\" : \"+983000505\"" +
+               $",\"toNum\": \"{mob}\"" +
+                ",\"patternCode\": \"u6qmhwhh1h\"" +
+                ",\"inputData\" : {\"verification-code\":" + $"\"{code}\"" + "}}"
                 , ParameterType.RequestBody);
+
 
             IRestResponse response = client.Execute(request);
             return response.IsSuccessful;
+
         }
 
         public bool SendOrderSmsForSeller(long mobileNo)
