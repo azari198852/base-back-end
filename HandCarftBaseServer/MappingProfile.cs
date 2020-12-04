@@ -333,6 +333,36 @@ namespace HandCarftBaseServer
 
             #endregion
 
+            #region SellerDocument
+
+            CreateMap<SellerDocument, SellerDocumentDto>()
+                .ForMember(u => u.DocumentName,
+                    opt => opt.MapFrom(x => x.Document.Title))
+                .ForMember(u => u.FianlStatus,
+                    opt => opt.MapFrom(x => x.FianlStatus.Name));
+
+
+            #endregion
+
+            #region Seller
+
+            CreateMap<Seller, SellerFullInfoDto>()
+                .ForMember(u => u.Bdate,
+                    opt => opt.MapFrom(x => DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)))
+                .ForMember(u => u.AddressList,
+                    opt => opt.MapFrom(x => x.SellerAddress))
+                .ForMember(u => u.DocumentList,
+                    opt => opt.MapFrom(x => x.SellerDocument));
+
+            #endregion
+
+            #region SellerAddress
+
+            CreateMap<SellerAddress, SellerAddressDto>();
+
+
+            #endregion
+
         }
     }
 }

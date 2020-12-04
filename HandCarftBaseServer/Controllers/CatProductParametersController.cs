@@ -10,6 +10,7 @@ using HandCarftBaseServer.Tools;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace HandCarftBaseServer.Controllers
 {
@@ -19,14 +20,16 @@ namespace HandCarftBaseServer.Controllers
     {
         public IMapper _mapper;
         private readonly IRepositoryWrapper _repository;
+        private readonly ILogger<CatProductParametersController> _logger;
 
-        public CatProductParametersController(IMapper mapper, IRepositoryWrapper repository)
+        public CatProductParametersController(IMapper mapper, IRepositoryWrapper repository, ILogger<CatProductParametersController> logger)
         {
             _mapper = mapper;
             _repository = repository;
+            _logger = logger;
         }
 
-        [Authorize]
+        //  [Authorize]
         [HttpPut]
         [Route("CatProductParameters/UpdateCatProductParameters")]
         public IActionResult InsertCatProductParameters(long catProductId, List<long> parametersIdList)
@@ -35,11 +38,16 @@ namespace HandCarftBaseServer.Controllers
 
             try
             {
-                var deletedList = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId)
+                var deletedList = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && !parametersIdList.Contains(c.ParametersId.Value))
                     .ToList();
                 _repository.CatProductParameters.RemoveRange(deletedList);
 
-                parametersIdList.ForEach(c =>
+                var indbIDs = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && c.DaDate == null && c.Ddate == null)
+                    .Select(c => c.ParametersId.Value).ToList();
+
+                var tobeInsertedList = parametersIdList.Except(indbIDs).ToList();
+
+                tobeInsertedList.ForEach(c =>
                 {
                     CatProductParameters catp = new CatProductParameters
                     {
@@ -48,15 +56,32 @@ namespace HandCarftBaseServer.Controllers
                         Cdate = DateTime.Now.Ticks,
                         CuserId = ClaimPrincipalFactory.GetUserId(User)
                     };
-                    _repository.CatProductParameters.Create(catp);
 
+
+                    var productlist = _repository.Product.FindByCondition(c => c.CatProductId == catProductId)
+                        .Select(c => c.Id).ToList();
+                    productlist.ForEach(c =>
+                    {
+                        var productparams = new ProductCatProductParameters
+                        {
+                            Value = null,
+                            Cdate = DateTime.Now.Ticks,
+                            CuserId = ClaimPrincipalFactory.GetUserId(User),
+                            ProductId = c,
+
+                        };
+                        catp.ProductCatProductParameters.Add(productparams);
+                    });
+                    _repository.CatProductParameters.Create(catp);
                 });
+
                 _repository.Save();
                 return Ok("");
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, e.Message);
                 return BadRequest("Internal Server Error");
             }
         }
@@ -72,7 +97,7 @@ namespace HandCarftBaseServer.Controllers
                 var selectedList = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && c.ParametersId != null && c.Ddate == null && c.DaDate == null)
                     .Select(c => c.ParametersId.Value).ToList();
 
-                
+
                 return Ok(selectedList);
             }
             catch (Exception e)

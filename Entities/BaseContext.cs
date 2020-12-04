@@ -2229,6 +2229,8 @@ namespace Entities
 
             modelBuilder.Entity<SellerDocument>(entity =>
             {
+                entity.ToTable("SellerDocument", "dbo");
+
                 entity.Property(e => e.Id).HasColumnName("ID");
 
                 entity.Property(e => e.AdminDescription).HasMaxLength(2048);
@@ -2261,6 +2263,11 @@ namespace Entities
                     .WithMany(p => p.SellerDocument)
                     .HasForeignKey(d => d.DocumentId)
                     .HasConstraintName("FK_SellerDocument_Document");
+
+                entity.HasOne(d => d.FianlStatus)
+                    .WithMany(p => p.SellerDocument)
+                    .HasForeignKey(d => d.FianlStatusId)
+                    .HasConstraintName("FK_SellerDocument_Status");
 
                 entity.HasOne(d => d.Seller)
                     .WithMany(p => p.SellerDocument)
@@ -2368,6 +2375,8 @@ namespace Entities
 
             modelBuilder.Entity<Status>(entity =>
             {
+                entity.ToTable("Status", "dbo");
+
                 entity.Property(e => e.Id).HasColumnName("ID");
 
                 entity.Property(e => e.CatStatusId).HasColumnName("CatStatusID");

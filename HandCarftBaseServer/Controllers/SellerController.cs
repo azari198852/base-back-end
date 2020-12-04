@@ -8,6 +8,8 @@ using Entities.BusinessModel;
 using Entities.DataTransferObjects;
 using Entities.Models;
 using Entities.UIResponse;
+using HandCarftBaseServer.Tools;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -74,6 +76,31 @@ namespace HandCarftBaseServer.Controllers
             }
         }
 
+
+        [Authorize]
+        [HttpGet]
+        [Route("Seller/GetSellerFullInfo")]
+        public SingleResult<SellerFullInfoDto> GetSellerFullInfo()
+        {
+
+            try
+            {
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+
+                var res = _repository.Seller.FindByCondition(c => c.UserId == userId)
+                    .Include(c => c.SellerAddress)
+                    .Include(c => c.SellerDocument).ThenInclude(c => c.Document).FirstOrDefault();
+                var result = _mapper.Map<SellerFullInfoDto>(res);
+                return SingleResult<SellerFullInfoDto>.GetSuccessfulResult(result);
+
+            }
+            catch (Exception e)
+            {
+                return SingleResult<SellerFullInfoDto>.GetFailResult(e.Message);
+            }
+
+
+        }
 
         #region UI_Methods
 

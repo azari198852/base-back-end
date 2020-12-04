@@ -21,6 +21,7 @@ namespace Entities.Models
         public long? DaDate { get; set; }
 
         public virtual Document Document { get; set; }
+        public virtual Status FianlStatus { get; set; }
         public virtual Seller Seller { get; set; }
     }
 }
