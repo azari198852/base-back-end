@@ -19,11 +19,17 @@ namespace Repository
 
       public List<ProductCatProductParameters> GetProductParamList(long productId)
       {
-          var result = FindByCondition(c => c.ProductId == productId)
+          var result = FindByCondition(c => c.ProductId == productId && c.Ddate==null && c.DaDate==null)
               .Include(c => c.CatProductParameters)
               .ThenInclude(c => c.Parameters).ToList();
 
           return result;
       }
+
+        public void RemoveRange(List<ProductCatProductParameters> list)
+        {
+            RepositoryContext.ProductCatProductParameters.RemoveRange(list);
+
+        }
     }
 }

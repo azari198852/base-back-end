@@ -17,6 +17,7 @@ namespace Repository
         public void RemoveRange(List<CatProductParameters> list)
         {
             RepositoryContext.CatProductParameters.RemoveRange(list);
+            
         }
     }
 }
