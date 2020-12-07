@@ -102,19 +102,22 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
-        [Authorize]
+        
         [HttpGet]
-        [Route("Seller/GetSellerFullInfo_Test")]
-        public SingleResult<SellerFullInfoDto> GetSellerFullInfo_Test(long userId)
+        [Route("Seller/GetSellerFullInfo_test")]
+        public SingleResult<SellerFullInfoDto> GetSellerFullInfo_test(long userId)
         {
 
             try
             {
-              
-
+                
                 var res = _repository.Seller.FindByCondition(c => c.UserId == userId)
                     .Include(c => c.SellerAddress)
                     .Include(c => c.SellerDocument).ThenInclude(c => c.Document).FirstOrDefault();
+
+                if (res == null)
+                    return SingleResult<SellerFullInfoDto>.GetFailResult("کد کاربری صحیح نیست") ;
+
                 var result = _mapper.Map<SellerFullInfoDto>(res);
                 return SingleResult<SellerFullInfoDto>.GetSuccessfulResult(result);
 

@@ -146,7 +146,7 @@ namespace HandCarftBaseServer.Controllers
                         .Include(c => c.UserRole)
                         .FirstOrDefault();
 
-                    if (user == null || user.UserRole.All(c => c.Role != 2))
+                    if (user == null)
                     {
 
                         var _user = new Users
@@ -182,28 +182,49 @@ namespace HandCarftBaseServer.Controllers
                         return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
 
                     }
-
-                    else if (string.IsNullOrWhiteSpace(user.Hpassword))
+                    else
                     {
 
-                        user.UserActivation.Add(new UserActivation
+                        if (user.UserRole.All(c => c.Role != 2))
                         {
-                            SendedCode = code,
-                            EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
-                            Cdate = DateTime.Now.Ticks,
-                            LoginType = 1
 
-                        });
+                            _repository.UserRole.Create(new UserRole { UserId = user.Id, Role = 2, Cdate = DateTime.Now.Ticks });
 
-                        _repository.Users.Update(user);
 
-                        var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
-                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+                        }
+
+                        if (string.IsNullOrWhiteSpace(user.Hpassword))
+                        {
+
+
+                            _repository.UserActivation.Create(new UserActivation
+                            {
+                                SendedCode = code,
+                                EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
+                                Cdate = DateTime.Now.Ticks,
+                                LoginType = 1
+
+                            });
+                            _repository.Save();
+
+                            var sms = new SendSMS();
+                            sms.SendLoginSms(mobileNo.Value, code);
+                            var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
+                            return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+                        }
+                        else
+                        {
+
+                            _repository.Save();
+                            var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
+                            return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+
+
+                        }
+
+
                     }
 
-
-                    var resss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
-                    return SingleResult<LoginRegisterDto>.GetSuccessfulResult(resss);
 
                 }
                 else if (email != null && !string.IsNullOrWhiteSpace(email))
@@ -212,7 +233,7 @@ namespace HandCarftBaseServer.Controllers
                         .Include(c => c.UserRole)
                         .FirstOrDefault();
 
-                    if (user == null || user.UserRole.All(c => c.Role != 2))
+                    if (user == null)
                     {
 
                         Users _user = new Users
@@ -247,27 +268,48 @@ namespace HandCarftBaseServer.Controllers
                         return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
 
                     }
-
-                    else if (string.IsNullOrWhiteSpace(user.Hpassword))
+                    else
                     {
 
-                        user.UserActivation.Add(new UserActivation
+                        if (user.UserRole.All(c => c.Role != 2))
                         {
-                            SendedCode = code,
-                            EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
-                            Cdate = DateTime.Now.Ticks,
-                            LoginType = 1
 
-                        });
+                            _repository.UserRole.Create(new UserRole { UserId = user.Id, Role = 2, Cdate = DateTime.Now.Ticks });
 
-                        _repository.Users.Update(user);
 
-                        var ress = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
-                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
+                        }
+
+                        if (string.IsNullOrWhiteSpace(user.Hpassword))
+                        {
+
+
+                            _repository.UserActivation.Create(new UserActivation
+                            {
+                                SendedCode = code,
+                                EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
+                                Cdate = DateTime.Now.Ticks,
+                                LoginType = 1
+
+                            });
+                            _repository.Save();
+
+                            SendEmail em = new SendEmail();
+                            em.SendLoginEmail(email, code);
+                            var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
+                            return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+                        }
+                        else
+                        {
+
+                            _repository.Save();
+                            var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
+                            return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+
+
+                        }
+
+
                     }
-
-                    var resss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
-                    return SingleResult<LoginRegisterDto>.GetSuccessfulResult(resss);
 
                 }
                 return SingleResult<LoginRegisterDto>.GetFailResult("شماره موبایل یا ایمیل را وارد کنید");
@@ -614,108 +656,93 @@ namespace HandCarftBaseServer.Controllers
         /// </summary>
         [HttpPost]
         [Route("Account/SellerLoginRegister")]
-        public SingleResult<LoginRegisterDto> SellerLoginRegister(string email, long? mobileNo)
+        public SingleResult<LoginRegisterDto> SellerLoginRegister(long mobileNo)
         {
 
             try
             {
-                if (mobileNo != null)
+
+                var user = _repository.Users.FindByCondition(c => c.Mobile == mobileNo).Include(c => c.UserRole)
+                    .FirstOrDefault();
+
+                var _random = new Random();
+                var code = _random.Next(1000, 9999);
+
+                if (user == null)
                 {
-
-                    var user = _repository.Users.FindByCondition(c => c.Mobile == mobileNo)
-                        .Include(c => c.UserRole)
-                        .FirstOrDefault();
-
-                    if (user == null || user.UserRole.All(c => c.Role != 3))
+                    var _user = new Users
                     {
-                        var _random = new Random();
-                        var code = _random.Next(1000, 9999);
-                        var _user = new Users
-                        {
-                            Mobile = mobileNo,
-                            Username = mobileNo.ToString(),
-                            Cdate = DateTime.Now.Ticks,
+                        Mobile = mobileNo,
+                        Username = mobileNo.ToString(),
+                        Cdate = DateTime.Now.Ticks,
 
-                        };
-                        _user.UserRole.Add(new UserRole { Role = 3, Cdate = DateTime.Now.Ticks });
-                        _user.Seller.Add(new Seller
-                        {
+                    };
+                    _user.UserRole.Add(new UserRole { Role = 3, Cdate = DateTime.Now.Ticks });
+                    _user.Seller.Add(new Seller
+                    {
 
-                            Mobile = mobileNo,
-                            Cdate = DateTime.Now.Ticks,
+                        Mobile = mobileNo,
+                        Cdate = DateTime.Now.Ticks,
 
-                        });
-                        _user.UserActivation.Add(new UserActivation
+                    });
+                    _user.UserActivation.Add(new UserActivation
+                    {
+                        SendedCode = code,
+                        EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
+                        Cdate = DateTime.Now.Ticks
+
+                    });
+                    _repository.Users.Create(_user);
+                    _repository.Save();
+
+                    var sms = new SendSMS();
+                    sms.SendLoginSms(mobileNo, code);
+                    var ress = new LoginRegisterDto { UserId = _user.Id, IsExist = false, LoginByCode = true };
+                    return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
+
+                }
+                else
+                {
+                    if (user.UserRole.All(c => c.Role != 3))
+                    {
+
+                        _repository.UserRole.Create(new UserRole { UserId = user.Id, Role = 3, Cdate = DateTime.Now.Ticks });
+                        
+
+                    }
+
+                    if (string.IsNullOrWhiteSpace(user.Hpassword))
+                    {
+
+
+                        _repository.UserActivation.Create(new UserActivation
                         {
                             SendedCode = code,
                             EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
-                            Cdate = DateTime.Now.Ticks
+                            Cdate = DateTime.Now.Ticks,
+                            LoginType = 1
 
                         });
-                        _repository.Users.Create(_user);
                         _repository.Save();
 
                         var sms = new SendSMS();
-                        sms.SendLoginSms(mobileNo.Value, code);
-                        var ress = new LoginRegisterDto { UserId = _user.Id, IsExist = false };
-                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
-
+                        sms.SendLoginSms(mobileNo, code);
+                        var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
+                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
                     }
-
-                    var resss = new LoginRegisterDto { UserId = user.Id, IsExist = true };
-                    return SingleResult<LoginRegisterDto>.GetSuccessfulResult(resss);
-
-                }
-                else if (email != null && !string.IsNullOrWhiteSpace(email))
-                {
-                    var user = _repository.Users.FindByCondition(c => c.Email == email)
-                        .Include(c => c.UserRole)
-                        .FirstOrDefault();
-
-                    if (user == null || user.UserRole.All(c => c.Role != 3))
+                    else
                     {
-                        Random _random = new Random();
-                        var code = _random.Next(1000, 9999);
-                        Users _user = new Users
-                        {
-                            Email = email,
-                            Username = email,
-                            Cdate = DateTime.Now.Ticks,
-                            Hpassword = code.ToString()
 
-                        };
-                        _user.UserRole.Add(new UserRole { Role = 3, Cdate = DateTime.Now.Ticks });
-                        _user.Seller.Add(new Seller
-                        {
-
-                            Email = email,
-                            Cdate = DateTime.Now.Ticks,
-
-                        });
-                        _user.UserActivation.Add(new UserActivation
-                        {
-                            SendedCode = code,
-                            EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
-                            Cdate = DateTime.Now.Ticks
-
-                        });
-                        _repository.Users.Create(_user);
                         _repository.Save();
+                        var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
+                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
 
-                        SendEmail em = new SendEmail();
-                        em.SendLoginEmail(email, code);
-                        var ress = new LoginRegisterDto { UserId = _user.Id, IsExist = false };
-                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
 
                     }
 
-                    var resss = new LoginRegisterDto { UserId = user.Id, IsExist = true };
-                    return SingleResult<LoginRegisterDto>.GetSuccessfulResult(resss);
-
-
 
                 }
-                return SingleResult<LoginRegisterDto>.GetFailResult("شماره موبایل یا ایمیل را وارد کنید");
+
             }
             catch (Exception e)
             {
@@ -726,16 +753,19 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
+        /// <summary>
+        ///ورود صنعتگر به سیستم با کد  
+        /// </summary>
         [HttpPost]
-        [Route("Account/SellerLogin_ByActivationCode")]
-        public SingleResult<LoginResultDto> SellerLogin_ByActivationCode(long userId, int activationCode)
+        [Route("Account/SellerLogin_ByActivationCode_UI")]
+        public SingleResult<LoginResultDto> SellerLogin_ByActivationCode_UI(long userId, int activationCode)
         {
 
             try
             {
                 var time = DateTime.Now.Ticks;
                 var activation = _repository.UserActivation.FindByCondition(c =>
-                        c.UserId == userId && c.SendedCode == activationCode)
+                        c.UserId == userId && c.SendedCode == activationCode && c.EndDateTime > time && c.LoginType == 1)
                     .FirstOrDefault();
                 if (activation == null) return SingleResult<LoginResultDto>.GetFailResult("کد وارد شده صحیح نمی باشد");
 
@@ -754,9 +784,9 @@ namespace HandCarftBaseServer.Controllers
                     new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
                     new Claim("Id", user.Id.ToString()),
                     new Claim("FullName", user.FullName??""),
-                    new Claim("UserName", user.Username),
+                    new Claim("Mobile", user.Mobile.ToString()),
                     new Claim("Email", user.Email ?? ""),
-                    new Claim("role", "3")
+                    new Claim("role","3")
                 };
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -764,7 +794,7 @@ namespace HandCarftBaseServer.Controllers
                 var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
                 var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims,
-                    expires: DateTime.UtcNow.AddDays(1), signingCredentials: signIn);
+                    expires: DateTime.UtcNow.AddHours(1), signingCredentials: signIn);
                 var res = new LoginResultDto { Token = new JwtSecurityTokenHandler().WriteToken(token), Fullname = user.FullName };
                 return SingleResult<LoginResultDto>.GetSuccessfulResult(res);
 
@@ -777,9 +807,12 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
+        /// <summary>
+        ///ورود صنعتگر به سیستم با کلمه عبور  
+        /// </summary>
         [HttpPost]
-        [Route("Account/SellerLogin_ByPass")]
-        public SingleResult<LoginResultDto> SellerLogin_ByPass(long userId, string pass)
+        [Route("Account/SellerLogin_ByPass_UI")]
+        public SingleResult<LoginResultDto> SellerLogin_ByPass_UI(long userId, string pass)
         {
 
             try
@@ -798,9 +831,9 @@ namespace HandCarftBaseServer.Controllers
                     new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
                     new Claim("Id", user.Id.ToString()),
                     new Claim("FullName", user.FullName??""),
-                    new Claim("UserName", user.Username),
+                    new Claim("Mobile", user.Mobile.ToString()),
                     new Claim("Email", user.Email ?? ""),
-                    new Claim("role", "3")
+                    new Claim("role", 3.ToString())
                 };
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
@@ -808,7 +841,7 @@ namespace HandCarftBaseServer.Controllers
                 var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
                 var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims,
-                    expires: DateTime.UtcNow.AddDays(1), signingCredentials: signIn);
+                    expires: DateTime.UtcNow.AddHours(1), signingCredentials: signIn);
                 var res = new LoginResultDto { Token = new JwtSecurityTokenHandler().WriteToken(token), Fullname = user.FullName };
                 return SingleResult<LoginResultDto>.GetSuccessfulResult(res);
 
@@ -821,6 +854,9 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
+        /// <summary>
+        ///درخواست کد فعالسازی جهت تغییر کلمه عبور صنعتگر  
+        /// </summary>
         [HttpGet]
         [Route("Account/SellerLogin_ForgetPass")]
         public VoidResult SellerLogin_ForgetPass(string email, long? mobileNo)
@@ -829,15 +865,27 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).FirstOrDefault();
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
                 if (user == null || user.UserRole.All(c => c.Role != 3)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                var now = DateTime.Now.Ticks;
+                if (_repository.UserActivation.FindByCondition(c => c.UserId == user.Id && c.EndDateTime > now && c.LoginType == 2).Any())
+                    return VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
 
-                var _random = new Random();
-                var code = _random.Next(1000, 9999);
-                user.Hpassword = code.ToString();
+                var random = new Random();
+                var code = random.Next(1000, 9999);
+
 
                 if (mobileNo != null)
                 {
+
+                    user.UserActivation.Add(new UserActivation
+                    {
+                        SendedCode = code,
+                        EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
+                        Cdate = DateTime.Now.Ticks,
+                        LoginType = 2
+
+                    });
 
                     var sms = new SendSMS();
                     sms.SendRestPassSms(mobileNo.Value, code);
@@ -845,15 +893,23 @@ namespace HandCarftBaseServer.Controllers
                 }
                 else
                 {
+                    user.UserActivation.Add(new UserActivation
+                    {
+                        SendedCode = code,
+                        EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
+                        Cdate = DateTime.Now.Ticks,
+                        LoginType = 2
 
+                    });
                     SendEmail em = new SendEmail();
                     em.SendResetPassEmail(email, code);
 
                 }
+                _repository.Users.Update(user);
                 _repository.Save();
                 //create claims details based on the user information
 
-                return VoidResult.GetSuccessResult("کلمه عبور جدید با موفقیت ارسال شد");
+                return VoidResult.GetSuccessResult("کد فعال سازی برای بازیابی رمز عبور ، با موفقیت ارسال شد");
 
             }
             catch (Exception e)
@@ -864,6 +920,96 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
+        /// <summary>
+        ///تغییر کلمه عبور با کد تایید دریافتی با استفاده از موبایل یا ایمیل صنعتگر  
+        /// </summary>
+        [HttpGet]
+        [Route("Account/Seller_ChangePassByActivationCode")]
+        public VoidResult Seller_ChangePassByActivationCode(string email, long? mobileNo, int code, string pass)
+        {
+
+            try
+            {
+
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
+                if (user == null || user.UserRole.All(c => c.Role != 3)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                var now = DateTime.Now.Ticks;
+                var s = _repository.UserActivation.FindByCondition(c =>
+                    c.UserId == user.Id && c.EndDateTime > now && c.SendedCode == code).FirstOrDefault();
+                if (s == null) return VoidResult.GetFailResult("کد وارد شده جهت تغییر کلمه عبور صحیح نمی باشد.");
+
+                user.Hpassword = pass;
+                _repository.Users.Update(user);
+                _repository.Save();
+
+                return VoidResult.GetSuccessResult("زمز عبور با نوفقیت تغییر یافت .");
+
+            }
+            catch (Exception e)
+            {
+                return VoidResult.GetFailResult(e.Message);
+            }
+
+
+        }
+
+        /// <summary>
+        ///درخواست کد فعالسازی یرای ورود به سیستم صنعتگر 
+        /// </summary>
+        [HttpGet]
+        [Route("Account/Seller_GetActivationCodeForLogin")]
+        public VoidResult Seller_ChangePassByActivationCode(string email, long? mobileNo, long? userId)
+        {
+
+            try
+            {
+
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null) || (c.Id == userId && userId != null)).Include(c => c.UserRole).FirstOrDefault();
+                if (user == null || user.UserRole.All(c => c.Role != 3)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                var now = DateTime.Now.Ticks;
+                if (_repository.UserActivation.FindByCondition(c => (c.UserId == user.Id) && (c.EndDateTime > now) && (c.LoginType == 1)).Any())
+                    return VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
+
+                var _random = new Random();
+                var code = _random.Next(1000, 9999);
+
+                user.UserActivation.Add(new UserActivation
+                {
+                    SendedCode = code,
+                    EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
+                    Cdate = DateTime.Now.Ticks,
+                    LoginType = 1
+
+                });
+                _repository.Users.Update(user);
+                _repository.Save();
+
+                if (!string.IsNullOrWhiteSpace(email) || !string.IsNullOrWhiteSpace(user.Email))
+                {
+
+                    var em = new SendEmail();
+                    em.SendLoginEmail(email ?? user.Email, code);
+                }
+
+                if (mobileNo != null || user.Mobile != null)
+                {
+                    var sms = new SendSMS();
+                    sms.SendLoginSms(mobileNo ?? user.Mobile.Value, code);
+
+                }
+
+
+
+                return VoidResult.GetSuccessResult("کد فعالسازی با موفقیت ارسال گردید .");
+
+            }
+            catch (Exception e)
+            {
+                return VoidResult.GetFailResult(e.Message);
+            }
+
+
+        }
 
 
         /// <summary>
@@ -962,7 +1108,7 @@ namespace HandCarftBaseServer.Controllers
         }
 
 
-        
+
 
     }
 }

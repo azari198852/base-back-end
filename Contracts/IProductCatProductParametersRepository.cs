@@ -8,5 +8,6 @@ namespace Contracts
     public interface IProductCatProductParametersRepository : IRepositoryBase<ProductCatProductParameters>
     {
         List<ProductCatProductParameters> GetProductParamList(long productId);
+        void RemoveRange(List<ProductCatProductParameters> list);
     }
 }
