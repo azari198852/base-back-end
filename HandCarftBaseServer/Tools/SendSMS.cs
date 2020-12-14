@@ -86,7 +86,7 @@ namespace HandCarftBaseServer.Tools
             return response.IsSuccessful;
         }
 
-        public bool SendRestPassSms(long mobileNo, int code)
+        public string SendRestPassSms(long mobileNo, int code)
         {
 
             var smsText = "کد تایید شما برای تغییر رمز در سایت ";
@@ -114,7 +114,10 @@ namespace HandCarftBaseServer.Tools
 
 
             IRestResponse response = client.Execute(request);
-            return response.IsSuccessful;
+            var a = "ErrorMessage:" + response.ErrorMessage + " Content: " + response.Content + " StatusCode:" +
+                    response.StatusCode;
+            return a;
+           
 
         }
 

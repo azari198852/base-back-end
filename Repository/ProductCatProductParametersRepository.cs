@@ -10,21 +10,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Repository
 {
-  public class ProductCatProductParametersRepository : RepositoryBase<ProductCatProductParameters>, IProductCatProductParametersRepository
+    public class ProductCatProductParametersRepository : RepositoryBase<ProductCatProductParameters>, IProductCatProductParametersRepository
     {
-      public ProductCatProductParametersRepository(BaseContext repositoryContext)
-          : base(repositoryContext)
-      {
-      }
+        public ProductCatProductParametersRepository(BaseContext repositoryContext)
+            : base(repositoryContext)
+        {
+        }
 
-      public List<ProductCatProductParameters> GetProductParamList(long productId)
-      {
-          var result = FindByCondition(c => c.ProductId == productId && c.Ddate==null && c.DaDate==null)
-              .Include(c => c.CatProductParameters)
-              .ThenInclude(c => c.Parameters).ToList();
+        public List<ProductCatProductParameters> GetProductParamList(long productId)
+        {
+            var result = FindByCondition(c => c.ProductId == productId)
+                .Include(c => c.CatProductParameters)
+                .ThenInclude(c => c.Parameters).ToList();
 
-          return result;
-      }
+            return result;
+        }
 
         public void RemoveRange(List<ProductCatProductParameters> list)
         {

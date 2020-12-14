@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
 
 namespace HandCarftBaseServer.Controllers
 {
@@ -39,11 +38,9 @@ namespace HandCarftBaseServer.Controllers
 
             try
             {
-                var deletedList = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && !parametersIdList.Contains(c.ParametersId.Value)).ToList();
-                var dlist = _repository.ProductCatProductParameters.FindByCondition(c => deletedList.Select(c => c.Id).ToList().Contains(c.CatProductParametersId.Value) || c.CatProductParametersId == null).ToList();
-
+                var deletedList = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && !parametersIdList.Contains(c.ParametersId.Value))
+                    .ToList();
                 _repository.CatProductParameters.RemoveRange(deletedList);
-                _repository.ProductCatProductParameters.RemoveRange(dlist);
 
                 var indbIDs = _repository.CatProductParameters.FindByCondition(c => c.CatProductId == catProductId && c.DaDate == null && c.Ddate == null)
                     .Select(c => c.ParametersId.Value).ToList();

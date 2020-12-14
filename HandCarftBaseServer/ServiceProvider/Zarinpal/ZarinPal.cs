@@ -18,8 +18,8 @@ namespace HandCarftBaseServer.ServiceProvider.ZarinPal
         {
             zarinPallRequest.merchant_id = merchant_id;
             zarinPallRequest.callback_url = Startup.StaticConfig["BankCallBack_Url"];
-            zarinPallRequest.metadata.mobile = "09353407341";
-            zarinPallRequest.metadata.email = "sahand.farshbaf@gmail.com";
+            zarinPallRequest.metadata.mobile = "";
+            zarinPallRequest.metadata.email = "";
 
             var body = JsonSerializer.Serialize(zarinPallRequest);
 

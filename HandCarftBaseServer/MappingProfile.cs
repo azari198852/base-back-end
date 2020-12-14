@@ -349,11 +349,13 @@ namespace HandCarftBaseServer
 
             CreateMap<Seller, SellerFullInfoDto>()
                 .ForMember(u => u.Bdate,
-                    opt => opt.MapFrom(x => DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)))
+                    opt => opt.MapFrom(x =>x.Bdate==null?null: DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)))
                 .ForMember(u => u.AddressList,
                     opt => opt.MapFrom(x => x.SellerAddress))
                 .ForMember(u => u.DocumentList,
-                    opt => opt.MapFrom(x => x.SellerDocument));
+                    opt => opt.MapFrom(x => x.SellerDocument))
+                .ForMember(u => u.SellerId,
+                    opt => opt.MapFrom(x => x.Id));
 
             #endregion
 

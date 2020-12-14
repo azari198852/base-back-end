@@ -707,7 +707,7 @@ namespace HandCarftBaseServer.Controllers
                     {
 
                         _repository.UserRole.Create(new UserRole { UserId = user.Id, Role = 3, Cdate = DateTime.Now.Ticks });
-                        
+
 
                     }
 
@@ -888,7 +888,8 @@ namespace HandCarftBaseServer.Controllers
                     });
 
                     var sms = new SendSMS();
-                    sms.SendRestPassSms(mobileNo.Value, code);
+                    var bb = sms.SendRestPassSms(mobileNo.Value, code);
+                    _logger.LogInformation(bb);
 
                 }
                 else
