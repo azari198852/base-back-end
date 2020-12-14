@@ -215,7 +215,7 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+           
                 return LongResult.GetFailResult("خطا در سامانه");
             }
 
