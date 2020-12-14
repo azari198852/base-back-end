@@ -707,7 +707,16 @@ namespace HandCarftBaseServer.Controllers
                     {
 
                         _repository.UserRole.Create(new UserRole { UserId = user.Id, Role = 3, Cdate = DateTime.Now.Ticks });
+                        var seller = new Seller
+                        {
 
+                            UserId = user.Id,
+                            Mobile = mobileNo,
+                            Cdate = DateTime.Now.Ticks,
+                            Name = user.FullName
+
+                        };
+                        _repository.Seller.Create(seller);
 
                     }
 

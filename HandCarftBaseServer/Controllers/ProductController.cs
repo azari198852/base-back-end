@@ -438,6 +438,7 @@ namespace HandCarftBaseServer.Controllers
         /// 4: مرتب سازی بر اساس ارزانترین
         /// 5: مرتب سازی بر اساس گرانترین
         /// 6: دارای نشان ملی
+        /// 7: دارای مهر اصالت یونسکو
         /// </param>
         /// <param name="filter.catProductId">
         /// آیدی دسته بندی محصول
@@ -528,7 +529,22 @@ namespace HandCarftBaseServer.Controllers
 
                     case 6:
                         res = _repository.Product.GetProductListFullInfo()
-                            .Where(c => (filter.ProductName == null || c.Name.Contains(filter.ProductName)) &&
+                            .Where(c => c.MelliFlag == true &&
+                                        (filter.ProductName == null || c.Name.Contains(filter.ProductName)) &&
+                                        (c.CatProductId == filter.CatProductId || filter.CatProductId == null) &&
+                                        (filter.MinPrice <= c.Price || filter.MinPrice == null) &&
+                                        (c.Price <= filter.MaxPrice || filter.MaxPrice == null) &&
+                                        (filter.SellerIdList.Contains(c.SellerId.Value) || filter.SellerIdList.Count == 0))
+                            .OrderByDescending(c => c.Cdate).ToList();
+                        MinPrice = res.Min(c => c.Price);
+                        MaxPrice = res.Max(c => c.Price);
+                        totalcount = res.Count;
+                        res = res.Skip((filter.PageNumber - 1) * filter.PageSize).Take(filter.PageSize).ToList();
+                        break;
+                    case 7:
+                        res = _repository.Product.GetProductListFullInfo()
+                            .Where(c => c.UnescoFlag == true &&
+                                        (filter.ProductName == null || c.Name.Contains(filter.ProductName)) &&
                                         (c.CatProductId == filter.CatProductId || filter.CatProductId == null) &&
                                         (filter.MinPrice <= c.Price || filter.MinPrice == null) &&
                                         (c.Price <= filter.MaxPrice || filter.MaxPrice == null) &&
@@ -884,6 +900,31 @@ namespace HandCarftBaseServer.Controllers
             }
         }
 
+        /// <summary>
+        ///جستجو کلی محصولات
+        /// </summary>
+        [HttpGet]
+        [Route("Product/ProducatGeneralSearch_UI")]
+        public ListResult<ProductGeneralSearchResultDto> ProducatGeneralSearch_UI(string name)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(name) || name.Length < 3)
+                    return ListResult<ProductGeneralSearchResultDto>.GetSuccessfulResult(null);
+
+                var res = _repository.Product.FindByCondition(c => c.Ddate == null && c.DaDate == null && c.Name.Contains(name)).Include(c => c.CatProduct).ToList();
+                var result = _mapper.Map<List<ProductGeneralSearchResultDto>>(res);
+                var finalresult = ListResult<ProductGeneralSearchResultDto>.GetSuccessfulResult(result,result.Count);
+                return finalresult;
+
+            }
+            catch (Exception e)
+            {
+                return ListResult<ProductGeneralSearchResultDto>.GetFailResult(null);
+
+            }
+        }
+
         #endregion
 
         #region Seller_Methods
@@ -945,7 +986,7 @@ namespace HandCarftBaseServer.Controllers
                 product.Price = sellerProductUpdateModel.Price;
                 product.ProducePrice = sellerProductUpdateModel.ProducePrice;
                 product.ProduceDuration = sellerProductUpdateModel.ProduceDuration;
-                product.Count= sellerProductUpdateModel.Count;
+                product.Count = sellerProductUpdateModel.Count;
                 product.FinalStatusId = 8;
                 _repository.Product.Update(product);
                 _repository.Save();

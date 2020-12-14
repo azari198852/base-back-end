@@ -29,7 +29,7 @@ namespace HandCarftBaseServer
             CreateMap<CatProduct, CatProductDto>();
             CreateMap<CatProductDto, CatProduct>();
             CreateMap<CatProduct, CatProductWithCountDto>()
-                .ForMember(u => u.ProductCount, opt => opt.MapFrom(x => x.Product.Count));
+                .ForMember(u => u.ProductCount, opt => opt.MapFrom(x => x.Product.Count + (x.InverseP.Select(w => w.Product.Count).Sum())));
 
 
             #endregion
@@ -147,7 +147,12 @@ namespace HandCarftBaseServer
                                                c.Ddate == null).Select(c => c.Offer.Value).DefaultIfEmpty(0).FirstOrDefault()) * x.Price /
                                100)));
 
-
+            CreateMap<Product, ProductGeneralSearchResultDto>()
+                .ForMember(u => u.ProductId, opt => opt.MapFrom(x => x.Id))
+                .ForMember(u => u.ProductName, opt => opt.MapFrom(x => x.Name))
+                .ForMember(u => u.CatProductId, opt => opt.MapFrom(x => x.CatProduct.Id))
+                .ForMember(u => u.CatProductName, opt => opt.MapFrom(x => x.CatProduct.Name))
+                .ForMember(u => u.CatProductCode, opt => opt.MapFrom(x => x.CatProduct.Coding));
 
 
             #endregion
@@ -349,7 +354,7 @@ namespace HandCarftBaseServer
 
             CreateMap<Seller, SellerFullInfoDto>()
                 .ForMember(u => u.Bdate,
-                    opt => opt.MapFrom(x =>x.Bdate==null?null: DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)))
+                    opt => opt.MapFrom(x => x.Bdate == null ? null : DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)))
                 .ForMember(u => u.AddressList,
                     opt => opt.MapFrom(x => x.SellerAddress))
                 .ForMember(u => u.DocumentList,

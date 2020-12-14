@@ -391,11 +391,11 @@ namespace HandCarftBaseServer.Controllers
             {
                 var catProduct = _repository.CatProduct.FindByCondition(c => c.DaDate == null && c.Ddate == null && c.Pid == null)
                     .Include(c => c.Product)
-                    .OrderByDescending(c => c.Product.Count).ToList();
+                    .Include(c=>c.InverseP).ThenInclude(c=>c.Product).ToList();
 
                 var result = _mapper.Map<List<CatProductWithCountDto>>(catProduct);
 
-                var finalresult = ListResult<CatProductWithCountDto>.GetSuccessfulResult(result);
+                var finalresult = ListResult<CatProductWithCountDto>.GetSuccessfulResult(result.OrderByDescending(c=>c.ProductCount).ToList());
                 return finalresult;
             }
             catch (Exception e)
