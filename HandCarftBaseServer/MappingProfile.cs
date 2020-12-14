@@ -354,7 +354,7 @@ namespace HandCarftBaseServer
 
             CreateMap<Seller, SellerFullInfoDto>()
                 .ForMember(u => u.Bdate,
-                    opt => opt.MapFrom(x => x.Bdate == null ? null : DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)))
+                    opt => opt.MapFrom(x => x.Bdate == null ? DateTime.Now.ToString() : DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)))
                 .ForMember(u => u.AddressList,
                     opt => opt.MapFrom(x => x.SellerAddress))
                 .ForMember(u => u.DocumentList,

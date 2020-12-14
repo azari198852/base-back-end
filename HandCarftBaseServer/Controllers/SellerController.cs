@@ -126,49 +126,105 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
+
+        /// <summary>
+        /// ثبت نام صنعتگر به سیستم 
+        /// </summary>
+        [HttpPost]
+        [Route("Seller/UpdateSellerFullInfo")]
+        public LongResult UpdateSellerFullInfo(SellerRegisterDto input)
+        {
+
+            try
+            {
+                if (input.Mobile == null)
+                {
+                    return LongResult.GetFailResult("شماره موبایل  وارد نشده است");
+                }
+
+                var user = _repository.Users.FindByCondition(c => (c.Mobile == input.Mobile) && c.UserRole.All(x => x.Role != 3))
+                    .FirstOrDefault();
+
+                if (user == null)
+                {
+                    var _user = new Users
+                    {
+                        Email = input.Email,
+                        Mobile = input.Mobile,
+                        FullName = input.Name + " " + input.Fname,
+                        Hpassword = input.PassWord,
+                        Username = input.Mobile.ToString(),
+                        Cdate = DateTime.Now.Ticks
+
+                    };
+
+                    var userRole = new UserRole
+                    {
+                        Role = 3,
+                        Cdate = DateTime.Now.Ticks,
+
+                    };
+
+                    _user.UserRole.Add(userRole);
+
+                    var seller = new Seller
+                    {
+                        Mobile = input.Mobile,
+                        Email = input.Email,
+                        Fname = input.Name,
+                        MelliCode = input.MelliCode,
+                        Name = input.Fname,
+                        MobileAppTypeId = input.MobileAppTypeId,
+                        HaveMobileApp = input.HaveMobileApp,
+                        RealOrLegal = input.RealOrLegal,
+                        SecondMobile = input.SecondMobile,
+                        ShabaNo = input.ShabaNo,
+                        Tel = input.Tel,
+                        SellerCode = _repository.Seller.FindAll().Max(c => c.SellerCode) + 1,
+                        Cdate = DateTime.Now.Ticks,
+                        Bdate = DateTimeFunc.MiladiToTimeTick(input.Bdate),
+                        FinalStatusId = 14,
+                        MobileAppVersion = input.MobileAppVersion,
+                        Gender = input.Gender,
+                        IdentityNo = input.IdentityNo
+
+                    };
+
+                    var sellerAddress = new SellerAddress
+                    {
+                        Address = input.Address.Address,
+                        Fax = input.Address.Fax,
+                        CityId = input.Address.CityId,
+                        PostalCode = input.Address.PostalCode,
+                        ProvinceId = input.Address.ProvinceId,
+                        Tel = input.Address.Tel,
+                        Titel = input.Address.Titel,
+                        Xgps = input.Address.Xgps,
+                        Ygps = input.Address.Ygps,
+                        Cdate = DateTime.Now.Ticks,
+
+                    };
+                    seller.SellerAddress.Add(sellerAddress);
+                    _user.Seller.Add(seller);
+                    _repository.Users.Create(_user);
+                    _repository.Save();
+                    return LongResult.GetSingleSuccessfulResult(seller.Id);
+                }
+
+                return LongResult.GetFailResult("برای این شماره موبایل قبلا ثبت نام انجام شد است");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+                return LongResult.GetFailResult("خطا در سامانه");
+            }
+
+
+        }
+
         #region UI_Methods
 
-        //[HttpPost]
-        //[Route("Account/SellerRegister_UI")]
-        //public async Task<LongResult> SellerRegister_UI(SellerRegisterDto seller)
-        //{
-        //    try
-        //    {
-        //        if (!ModelState.IsValid) return LongResult.GetFailResult("فیلدهای اجباری پر نشده اند");
-        //        if (await _repository.Users.FindByCondition(c => c.Username == seller.Mobile.ToString()).AnyAsync())
-        //            return LongResult.GetFailResult("UserName Already Exits!");
 
-
-        //        Users _user = new Users
-        //        {
-
-        //            Hpassword = seller.Hpassword,
-        //            Email = seller.Email,
-        //            Mobile = seller.Mobile,
-        //            Username = seller.Mobile.ToString(),
-        //            Cdate = DateTime.Now.Ticks
-
-
-        //        };
-        //        _user.UserRole.Add(new UserRole { Role = 3, Cdate = DateTime.Now.Ticks });
-        //        _user.Seller.Add(new Seller
-        //        {
-        //            Email = seller.Email,
-        //            Mobile = seller.Mobile,
-        //            Cdate = DateTime.Now.Ticks,
-
-
-        //        });
-        //        _repository.Users.Create(_user);
-        //        _repository.Save();
-
-        //        return LongResult.GetSingleSuccessfulResult(_user.Seller.FirstOrDefault().Id);
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        return LongResult.GetFailResult(e.Message);
-        //    }
-        //}
 
         #endregion
     }
