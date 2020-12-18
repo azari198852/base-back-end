@@ -79,10 +79,12 @@ namespace HandCarftBaseServer.Controllers
             }
         }
 
-
+        /// <summary>
+        /// دریافت مشخصات صنعتگر  
+        /// </summary>
         [Authorize]
         [HttpGet]
-        [Route("Seller/GetSellerFullInfo_UI")]
+        [Route("Seller/GetSellerFullInfo")]
         public SingleResult<SellerFullInfoDto> GetSellerFullInfo_UI()
         {
 
@@ -111,8 +113,8 @@ namespace HandCarftBaseServer.Controllers
         /// </summary>
         [Authorize]
         [HttpPost]
-        [Route("Seller/UpdateSellerFullInfo_UI")]
-        public LongResult UpdateSellerFullInfo_UI(SellerRegisterDto input)
+        [Route("Seller/UpdateSellerFullInfo")]
+        public LongResult UpdateSellerFullInfo(SellerRegisterDto input)
         {
             var seller = _repository.Seller.FindByCondition(c => c.UserId == ClaimPrincipalFactory.GetUserId(User)).FirstOrDefault();
             if (seller == null)
@@ -197,6 +199,34 @@ namespace HandCarftBaseServer.Controllers
             {
                 _logger.LogError(e.Message);
                 return LongResult.GetFailResult("خطا در سامانه");
+            }
+
+
+        }
+
+        /// <summary>
+        /// لیست مدارک صنعتگر  
+        /// </summary>
+        [Authorize]
+        [HttpPost]
+        [Route("Seller/GetSellerDocumentList")]
+        public ListResult<SellerDocumentDto> GetSellerDocumentList()
+        {
+            try
+            {
+                var seller = _repository.Seller.FindByCondition(c => c.UserId == ClaimPrincipalFactory.GetUserId(User)).FirstOrDefault();
+                if (seller == null)
+                    return ListResult<SellerDocumentDto>.GetFailResult("فروشنده پیدا نشد!");
+
+                var res = _repository.SellerDocument.FindByCondition(c => c.SellerId == seller.Id).Include(c => c.Document)
+                    .ToList();
+                var result = _mapper.Map<List<SellerDocumentDto>>(res);
+                return ListResult<SellerDocumentDto>.GetSuccessfulResult(result, result.Count);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e.Message);
+                return ListResult<SellerDocumentDto>.GetFailResult(e.Message);
             }
 
 

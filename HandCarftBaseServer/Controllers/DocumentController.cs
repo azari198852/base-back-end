@@ -66,10 +66,11 @@ namespace HandCarftBaseServer.Controllers
                 if (seller == null)
                     return LongResult.GetFailResult("فروشنده پیدا نشد!");
 
-                var docpath = "";
+               
                 var documentfile = HttpContext.Request.Form.Files.GetFile("Document");
                 if (documentfile != null)
                 {
+                    var docpath = "";
                     var uploadFileStatus = FileManeger.FileUploader(documentfile, 1, "SellerDocuments");
                     if (uploadFileStatus.Status == 200)
                     {
@@ -80,22 +81,23 @@ namespace HandCarftBaseServer.Controllers
                         return LongResult.GetFailResult(uploadFileStatus.Path);
                     }
 
+                    SellerDocument doc = new SellerDocument
+                    {
+
+                        FileUrl = docpath,
+                        SellerId = seller.Id,
+                        CuserId = userId,
+                        Cdate = DateTime.Now.Ticks,
+                        DocumentId = documentId
+
+                    };
+                    _repository.SellerDocument.Create(doc);
+                    _repository.Save();
+
+                    return LongResult.GetSingleSuccessfulResult(doc.Id);
                 }
 
-                SellerDocument doc = new SellerDocument
-                {
-
-                    FileUrl = docpath,
-                    SellerId = seller.Id,
-                    CuserId = userId,
-                    Cdate = DateTime.Now.Ticks,
-                    DocumentId = documentId
-
-                };
-                _repository.SellerDocument.Create(doc);
-                _repository.Save();
-
-                return LongResult.GetSingleSuccessfulResult(doc.Id);
+                return LongResult.GetFailResult("فایلی بارگزاری نشده است");
             }
             catch (Exception e)
             {
