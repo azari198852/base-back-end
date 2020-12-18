@@ -4,9 +4,9 @@ using System.Text;
 
 namespace Entities.DataTransferObjects
 {
-   public class SellerAddressDto
+    public class SellerAddressDto
     {
-
+        public long ID { get; set; }
         public string Titel { get; set; }
         public string Address { get; set; }
         public string Xgps { get; set; }

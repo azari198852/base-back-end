@@ -53,17 +53,19 @@ namespace HandCarftBaseServer.Controllers
             }
         }
 
-
+        [Authorize]
         [HttpPost]
         [Route("Document/UploadSellerDocument")]
-        public LongResult UploadSellerDocument(long sellerId, long documentId)
+        public LongResult UploadSellerDocument(long documentId)
         {
             try
             {
 
-                var userId = _repository.Seller.FindByCondition(c => c.Id == sellerId)
-                    .Include(c => c.User).Select(c => c.UserId)
-                    .FirstOrDefault();
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+                var seller = _repository.Seller.FindByCondition(c => c.UserId == userId).FirstOrDefault();
+                if (seller == null)
+                    return LongResult.GetFailResult("فروشنده پیدا نشد!");
+
                 var docpath = "";
                 var documentfile = HttpContext.Request.Form.Files.GetFile("Document");
                 if (documentfile != null)
@@ -84,7 +86,7 @@ namespace HandCarftBaseServer.Controllers
                 {
 
                     FileUrl = docpath,
-                    SellerId = sellerId,
+                    SellerId = seller.Id,
                     CuserId = userId,
                     Cdate = DateTime.Now.Ticks,
                     DocumentId = documentId

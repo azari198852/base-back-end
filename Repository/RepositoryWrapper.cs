@@ -64,6 +64,7 @@ namespace Repository
         private IDocumentRepository _document;
         private ISellerDocumentRepository _sellerDocument;
         private IWorkRepository _work;
+        private ISellerAddressRepository _sellerAddress;
 
 
         public IApiRepository Api => _api ??= new ApiRepository(_repoContext);
@@ -121,6 +122,7 @@ namespace Repository
         public IDocumentRepository Document => _document ??= new DocumentRepository(_repoContext);
         public ISellerDocumentRepository SellerDocument => _sellerDocument ??= new SellerDocumentRepository(_repoContext);
         public IWorkRepository Work => _work ??= new WorkRepository(_repoContext);
+        public ISellerAddressRepository SellerAddress => _sellerAddress ??= new SellerAddressRepository(_repoContext);
         public RepositoryWrapper(BaseContext repositoryContext)
         {
             _repoContext = repositoryContext;

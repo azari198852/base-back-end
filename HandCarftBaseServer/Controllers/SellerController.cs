@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HandCarftBaseServer.Controllers
 {
@@ -22,11 +23,13 @@ namespace HandCarftBaseServer.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repository;
+        private readonly ILogger<SellerController> _logger;
 
-        public SellerController(IMapper mapper, IRepositoryWrapper repository)
+        public SellerController(IMapper mapper, IRepositoryWrapper repository, ILogger<SellerController> logger)
         {
             _mapper = mapper;
             _repository = repository;
+            _logger = logger;
         }
 
 
@@ -79,8 +82,8 @@ namespace HandCarftBaseServer.Controllers
 
         [Authorize]
         [HttpGet]
-        [Route("Seller/GetSellerFullInfo")]
-        public SingleResult<SellerFullInfoDto> GetSellerFullInfo()
+        [Route("Seller/GetSellerFullInfo_UI")]
+        public SingleResult<SellerFullInfoDto> GetSellerFullInfo_UI()
         {
 
             try
@@ -103,92 +106,46 @@ namespace HandCarftBaseServer.Controllers
         }
 
 
-        [HttpGet]
-        [Route("Seller/GetSellerFullInfo_test")]
-        public SingleResult<SellerFullInfoDto> GetSellerFullInfo_test(long userId)
-        {
-
-            try
-            {
-                
-                var res = _repository.Seller.FindByCondition(c => c.UserId == userId)
-                    .Include(c => c.SellerAddress)
-                    .Include(c => c.SellerDocument).ThenInclude(c => c.Document).FirstOrDefault();
-                var result = _mapper.Map<SellerFullInfoDto>(res);
-                return SingleResult<SellerFullInfoDto>.GetSuccessfulResult(result);
-
-            }
-            catch (Exception e)
-            {
-                return SingleResult<SellerFullInfoDto>.GetFailResult(e.Message);
-            }
-
-
-        }
-
-
         /// <summary>
-        /// ثبت نام صنعتگر به سیستم 
+        /// ثبت مشخصات صنعتگر  
         /// </summary>
+        [Authorize]
         [HttpPost]
-        [Route("Seller/UpdateSellerFullInfo")]
-        public LongResult UpdateSellerFullInfo(SellerRegisterDto input)
+        [Route("Seller/UpdateSellerFullInfo_UI")]
+        public LongResult UpdateSellerFullInfo_UI(SellerRegisterDto input)
         {
+            var seller = _repository.Seller.FindByCondition(c => c.UserId == ClaimPrincipalFactory.GetUserId(User)).FirstOrDefault();
+            if (seller == null)
+                return LongResult.GetFailResult("فروشنده پیدا نشد!");
+            if (input.Mobile == null)
+            {
+                return LongResult.GetFailResult("شماره موبایل  وارد نشده است");
+            }
 
             try
             {
-                if (input.Mobile == null)
+
+                seller.Mobile = input.Mobile;
+                seller.Email = input.Email;
+                seller.Fname = input.Name;
+                seller.MelliCode = input.MelliCode;
+                seller.Name = input.Fname;
+                seller.MobileAppTypeId = input.MobileAppTypeId;
+                seller.HaveMobileApp = input.HaveMobileApp;
+                seller.RealOrLegal = input.RealOrLegal;
+                seller.SecondMobile = input.SecondMobile;
+                seller.ShabaNo = input.ShabaNo;
+                seller.Tel = input.Tel;
+                seller.SellerCode = _repository.Seller.FindAll().Max(c => c.SellerCode) + 1;
+                seller.Cdate = DateTime.Now.Ticks;
+                seller.Bdate = DateTimeFunc.MiladiToTimeTick(input.Bdate);
+                seller.FinalStatusId = 14;
+                seller.MobileAppVersion = input.MobileAppVersion;
+                seller.Gender = input.Gender;
+                seller.IdentityNo = input.IdentityNo;
+
+                if (input.Address.ID == 0)
                 {
-                    return LongResult.GetFailResult("شماره موبایل  وارد نشده است");
-                }
-
-                var user = _repository.Users.FindByCondition(c => (c.Mobile == input.Mobile) && c.UserRole.All(x => x.Role != 3))
-                    .FirstOrDefault();
-
-                if (user == null)
-                {
-                    var _user = new Users
-                    {
-                        Email = input.Email,
-                        Mobile = input.Mobile,
-                        FullName = input.Name + " " + input.Fname,
-                        Hpassword = input.PassWord,
-                        Username = input.Mobile.ToString(),
-                        Cdate = DateTime.Now.Ticks
-
-                    };
-
-                    var userRole = new UserRole
-                    {
-                        Role = 3,
-                        Cdate = DateTime.Now.Ticks,
-
-                    };
-
-                    _user.UserRole.Add(userRole);
-
-                    var seller = new Seller
-                    {
-                        Mobile = input.Mobile,
-                        Email = input.Email,
-                        Fname = input.Name,
-                        MelliCode = input.MelliCode,
-                        Name = input.Fname,
-                        MobileAppTypeId = input.MobileAppTypeId,
-                        HaveMobileApp = input.HaveMobileApp,
-                        RealOrLegal = input.RealOrLegal,
-                        SecondMobile = input.SecondMobile,
-                        ShabaNo = input.ShabaNo,
-                        Tel = input.Tel,
-                        SellerCode = _repository.Seller.FindAll().Max(c => c.SellerCode) + 1,
-                        Cdate = DateTime.Now.Ticks,
-                        Bdate = DateTimeFunc.MiladiToTimeTick(input.Bdate),
-                        FinalStatusId = 14,
-                        MobileAppVersion = input.MobileAppVersion,
-                        Gender = input.Gender,
-                        IdentityNo = input.IdentityNo
-
-                    };
 
                     var sellerAddress = new SellerAddress
                     {
@@ -205,17 +162,40 @@ namespace HandCarftBaseServer.Controllers
 
                     };
                     seller.SellerAddress.Add(sellerAddress);
-                    _user.Seller.Add(seller);
-                    _repository.Users.Create(_user);
+                    _repository.Seller.Update(seller);
                     _repository.Save();
-                    return LongResult.GetSingleSuccessfulResult(seller.Id);
+                }
+                else
+                {
+                    var sellerAddress = _repository.SellerAddress.FindByCondition(c => c.Id == input.Address.ID).FirstOrDefault();
+                    if (sellerAddress != null)
+                    {
+
+                        sellerAddress.Address = input.Address.Address;
+                        sellerAddress.Fax = input.Address.Fax;
+                        sellerAddress.CityId = input.Address.CityId;
+                        sellerAddress.PostalCode = input.Address.PostalCode;
+                        sellerAddress.ProvinceId = input.Address.ProvinceId;
+                        sellerAddress.Tel = input.Address.Tel;
+                        sellerAddress.Titel = input.Address.Titel;
+                        sellerAddress.Xgps = input.Address.Xgps;
+                        sellerAddress.Ygps = input.Address.Ygps;
+                        sellerAddress.Mdate = DateTime.Now.Ticks;
+                        sellerAddress.MuserId = ClaimPrincipalFactory.GetUserId(User);
+                        _repository.SellerAddress.Update(sellerAddress);
+
+
+                    }
+                    _repository.Seller.Update(seller);
+                    _repository.Save();
                 }
 
-                return LongResult.GetFailResult("برای این شماره موبایل قبلا ثبت نام انجام شد است");
+                return LongResult.GetSingleSuccessfulResult(seller.Id);
+
             }
             catch (Exception e)
             {
-           
+                _logger.LogError(e.Message);
                 return LongResult.GetFailResult("خطا در سامانه");
             }
 
