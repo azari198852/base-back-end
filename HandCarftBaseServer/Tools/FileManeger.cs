@@ -236,16 +236,16 @@ namespace HandCarftBaseServer.Tools
             //-------------------------------------------
             //  Check the image mime types
             //-------------------------------------------
-            if (!string.Equals(postedFile.ContentType, "image/jpg", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(postedFile.ContentType, "image/jpeg", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(postedFile.ContentType, "image/pjpeg", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(postedFile.ContentType, "image/gif", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(postedFile.ContentType, "image/x-png", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(postedFile.ContentType, "image/bmp", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(postedFile.ContentType, "image/png", StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
+            //if (!string.Equals(postedFile.ContentType, "image/jpg", StringComparison.OrdinalIgnoreCase) &&
+            //    !string.Equals(postedFile.ContentType, "image/jpeg", StringComparison.OrdinalIgnoreCase) &&
+            //    !string.Equals(postedFile.ContentType, "image/pjpeg", StringComparison.OrdinalIgnoreCase) &&
+            //    !string.Equals(postedFile.ContentType, "image/gif", StringComparison.OrdinalIgnoreCase) &&
+            //    !string.Equals(postedFile.ContentType, "image/x-png", StringComparison.OrdinalIgnoreCase) &&
+            //    !string.Equals(postedFile.ContentType, "image/bmp", StringComparison.OrdinalIgnoreCase) &&
+            //    !string.Equals(postedFile.ContentType, "image/png", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    return false;
+            //}
 
             //-------------------------------------------
             //  Check the image extension
