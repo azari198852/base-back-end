@@ -103,6 +103,8 @@ namespace HandCarftBaseServer.Controllers
                 var userId = ClaimPrincipalFactory.GetUserId(User);
                 var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).Select(c => c.Id)
                     .FirstOrDefault();
+                if(customerId==0)
+                    return SingleResult<long>.GetFailResult("مشتری یافت نشد");
                 var address = _mapper.Map<CustomerAddress>(addressdto);
 
                 address.CustomerId = customerId;
@@ -130,7 +132,7 @@ namespace HandCarftBaseServer.Controllers
             catch (Exception e)
             {
 
-
+                _logger.LogError(e.Message, addressdto);
                 return SingleResult<long>.GetFailResult(e.Message);
             }
 

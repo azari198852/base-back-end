@@ -60,5 +60,29 @@ namespace Entities.UIResponse
                 };
             }
         }
+
+        public static SingleResult<T> GetFailResult(string message,int code)
+        {
+
+
+            if (message == null)
+            {
+                return new SingleResult<T>()
+                {
+
+                    ResultCode = code,
+                    ResultMessage = "در انجام عملیات مشکلی پیش آمده است"
+                };
+            }
+            else
+            {
+                return new SingleResult<T>()
+                {
+
+                    ResultCode = code,
+                    ResultMessage = message,
+                };
+            }
+        }
     }
 }

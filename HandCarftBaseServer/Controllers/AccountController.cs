@@ -189,7 +189,17 @@ namespace HandCarftBaseServer.Controllers
                         {
 
                             _repository.UserRole.Create(new UserRole { UserId = user.Id, Role = 2, Cdate = DateTime.Now.Ticks });
+                            var customer = new Customer
+                            {
+                                Email = user.Email,
+                                Fname = user.FullName,
+                                Mobile = user.Mobile,
+                                Name = user.FullName,
+                                UserId = user.Id
+                                
 
+                            };
+                            _repository.Customer.Create(customer);
 
                         }
 
@@ -202,9 +212,13 @@ namespace HandCarftBaseServer.Controllers
                                 SendedCode = code,
                                 EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
                                 Cdate = DateTime.Now.Ticks,
-                                LoginType = 1
+                                LoginType = 1,
+                                UserId = user.Id
+
 
                             });
+                           
+                         
                             _repository.Save();
 
                             var sms = new SendSMS();
@@ -275,6 +289,17 @@ namespace HandCarftBaseServer.Controllers
                         {
 
                             _repository.UserRole.Create(new UserRole { UserId = user.Id, Role = 2, Cdate = DateTime.Now.Ticks });
+                            var customer = new Customer
+                            {
+                                Email = user.Email,
+                                Fname = user.FullName,
+                                Mobile = user.Mobile,
+                                Name = user.FullName,
+                                UserId = user.Id
+
+
+                            };
+                            _repository.Customer.Create(customer);
 
 
                         }
@@ -288,12 +313,13 @@ namespace HandCarftBaseServer.Controllers
                                 SendedCode = code,
                                 EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
                                 Cdate = DateTime.Now.Ticks,
-                                LoginType = 1
+                                LoginType = 1,
+                                UserId = user.Id
 
                             });
                             _repository.Save();
 
-                            SendEmail em = new SendEmail();
+                            var em = new SendEmail();
                             em.SendLoginEmail(email, code);
                             var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
                             return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
@@ -452,7 +478,8 @@ namespace HandCarftBaseServer.Controllers
                         SendedCode = code,
                         EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
                         Cdate = DateTime.Now.Ticks,
-                        LoginType = 2
+                        LoginType = 2,
+                        UserId = user.Id
 
                     });
 
@@ -467,7 +494,8 @@ namespace HandCarftBaseServer.Controllers
                         SendedCode = code,
                         EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
                         Cdate = DateTime.Now.Ticks,
-                        LoginType = 2
+                        LoginType = 2,
+                        UserId = user.Id
 
                     });
                     SendEmail em = new SendEmail();
@@ -622,18 +650,18 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet]
         [Route("Account/Customer_GetProfileInfo")]
         public SingleResult<CustomerProfileDto> Customer_GetProfileInfo()
         {
-
+            var userId = ClaimPrincipalFactory.GetUserId(User);
             try
             {
-                var userId = ClaimPrincipalFactory.GetUserId(User);
 
                 var customer = _repository.Customer.FindByCondition(c => c.UserId == userId).Include(c => c.Work).FirstOrDefault();
-
+                if (customer == null)
+                    return SingleResult<CustomerProfileDto>.GetFailResult("مشتری یافت نشد!", 201);
                 var cust = _mapper.Map<CustomerProfileDto>(customer);
 
                 cust.Password = null;
@@ -642,7 +670,7 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, e.Message, userId);
                 return SingleResult<CustomerProfileDto>.GetFailResult(e.Message);
             }
 
@@ -689,7 +717,8 @@ namespace HandCarftBaseServer.Controllers
                     {
                         SendedCode = code,
                         EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
-                        Cdate = DateTime.Now.Ticks
+                        Cdate = DateTime.Now.Ticks,
+                        LoginType = 1
 
                     });
                     _repository.Users.Create(_user);
@@ -729,7 +758,8 @@ namespace HandCarftBaseServer.Controllers
                             SendedCode = code,
                             EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
                             Cdate = DateTime.Now.Ticks,
-                            LoginType = 1
+                            LoginType = 1,
+                            UserId = user.Id
 
                         });
                         _repository.Save();
@@ -892,7 +922,9 @@ namespace HandCarftBaseServer.Controllers
                         SendedCode = code,
                         EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
                         Cdate = DateTime.Now.Ticks,
-                        LoginType = 2
+                        LoginType = 2,
+                        UserId = user.Id
+
 
                     });
 
@@ -908,7 +940,8 @@ namespace HandCarftBaseServer.Controllers
                         SendedCode = code,
                         EndDateTime = DateTime.Now.AddMinutes(2).Ticks,
                         Cdate = DateTime.Now.Ticks,
-                        LoginType = 2
+                        LoginType = 2,
+                        UserId = user.Id
 
                     });
                     SendEmail em = new SendEmail();

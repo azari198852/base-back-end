@@ -335,7 +335,7 @@ namespace HandCarftBaseServer
 
             CreateMap<CustomerProfileDto, Customer>();
             CreateMap<Customer, CustomerProfileDto>().ForMember(u => u.Bdate,
-                opt => opt.MapFrom(x => DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)));
+                opt => opt.MapFrom(x => x.Bdate == null ? DateTime.Now.ToString() : DateTimeFunc.TimeTickToMiladi(x.Bdate.Value)));
 
             #endregion
 
