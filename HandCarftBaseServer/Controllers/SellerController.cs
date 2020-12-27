@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace HandCarftBaseServer.Controllers
 {
@@ -161,9 +162,10 @@ namespace HandCarftBaseServer.Controllers
                         Xgps = input.Address.Xgps,
                         Ygps = input.Address.Ygps,
                         Cdate = DateTime.Now.Ticks,
+                        SellerId=seller.Id
 
                     };
-                    seller.SellerAddress.Add(sellerAddress);
+                    _repository.SellerAddress.Create(sellerAddress);
                     _repository.Seller.Update(seller);
                     _repository.Save();
                 }
@@ -197,7 +199,7 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e.Message);
+                _logger.LogError(JsonConvert.SerializeObject(e),JsonConvert.SerializeObject(input));
                 return LongResult.GetFailResult("خطا در سامانه");
             }
 

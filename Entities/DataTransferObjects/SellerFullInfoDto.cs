@@ -23,6 +23,7 @@ namespace Entities.DataTransferObjects
         public bool? HaveMobileApp { get; set; }
         public string MobileAppVersion { get; set; }
         public long? MobileAppTypeId { get; set; }
+        public DateTime? RegisterDate { get; set; }
         public List<SellerAddressDto> AddressList { get; set; }
         public List<SellerDocumentDto> DocumentList { get; set; }
     }
