@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
+using System.Reflection;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using Entities.UIResponse;
 using HandCarftBaseServer.ServiceProvider.PostService;
 using HandCarftBaseServer.ServiceProvider.ZarinPal;
 using HandCarftBaseServer.Tools;
+using Logger;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,9 +30,9 @@ namespace HandCarftBaseServer.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repository;
-        private readonly ILogger<OrderController> _logger;
+        private readonly ILogHandler _logger;
 
-        public OrderController(IMapper mapper, IRepositoryWrapper repository, ILogger<OrderController> logger)
+        public OrderController(IMapper mapper, IRepositoryWrapper repository, ILogHandler logger)
         {
             _mapper = mapper;
             _repository = repository;
@@ -47,11 +49,12 @@ namespace HandCarftBaseServer.Controllers
                 var res = _repository.Status
                    .FindByCondition(c => c.CatStatus.Tables.Any(x => x.Name == "CustomerOrder"))
                    .Select(c => new { c.Id, c.Name }).ToList();
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null);
                 return Ok(res);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return BadRequest(e.Message);
             }
         }
@@ -81,11 +84,12 @@ namespace HandCarftBaseServer.Controllers
                           PaymentStatus = c.CustomerOrderPayment.OrderByDescending(u => u.Id).Select(x => x.FinalStatus.Name).FirstOrDefault(),
                           Editable = c.CustomerOrderProduct.All(x => x.FinalStatusId == 23)
                       }).OrderByDescending(c => c.Id).ToList();
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null);
                 return Ok(res);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return BadRequest(e.Message);
             }
         }
@@ -140,11 +144,12 @@ namespace HandCarftBaseServer.Controllers
 
                     }).FirstOrDefault();
                 var result = new { Order = order, Orderproduct = orderproduct };
+                _logger.LogData(MethodBase.GetCurrentMethod(), result, null, orderId);
                 return Ok(result);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), orderId);
                 return BadRequest(e.Message);
             }
         }
@@ -158,7 +163,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
                 var order = _repository.CustomerOrder.FindByCondition(c => c.Id == orderId).FirstOrDefault();
-                if (order == null) return BadRequest("سفارش یافت نشد.");
+                if (order == null) throw new BusinessException(XError.GetDataErrors.NotFound());
 
 
                 var UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -190,12 +195,13 @@ namespace HandCarftBaseServer.Controllers
                 order.CustomerOrderStatusLog.Add(orderstatus);
                 _repository.CustomerOrder.Update(order);
                 _repository.Save();
-                return Ok("");
+                _logger.LogData(MethodBase.GetCurrentMethod(), General.Results_.SuccessMessage(), null, orderId, statusId, sentDate, trackingCode, deliverDate);
+                return Ok(General.Results_.SuccessMessage());
 
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), orderId, statusId, sentDate, trackingCode, deliverDate);
                 return BadRequest(e.Message);
             }
         }
@@ -290,20 +296,22 @@ namespace HandCarftBaseServer.Controllers
 
                     };
                     var postresult = post.GetDeliveryPrice(postpriceparam).Result;
-                    if (postresult.ErrorCode != 0) return SingleResult<OrderPreViewResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
+                    if (postresult.ErrorCode != 0) throw new BusinessException(XError.IncomingSerivceErrors.PostSeerivcError());
                     customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
 
                 }
 
 
                 customerOrder.FinalPrice = customerOrder.OrderPrice + customerOrder.PostServicePrice;
-
-                return SingleResult<OrderPreViewResultDto>.GetSuccessfulResult(customerOrder);
+                var finalres = SingleResult<OrderPreViewResultDto>.GetSuccessfulResult(customerOrder);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, order);
+                return finalres;
 
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), order);
                 return SingleResult<OrderPreViewResultDto>.GetFailResult(e.Message);
 
             }
@@ -429,7 +437,7 @@ namespace HandCarftBaseServer.Controllers
 
                     };
                     var postresult = post.GetDeliveryPrice(postpriceparam).Result;
-                    if (postresult.ErrorCode != 0) return SingleResult<InsertOrderResultDto>.GetFailResult("خطا در دریافت اطلاعات پستی");
+                    if (postresult.ErrorCode != 0) throw new BusinessException(XError.IncomingSerivceErrors.PostSeerivcError());
                     customerOrder.PostServicePrice = (postresult.PostDeliveryPrice + postresult.VatTax) / 10;
 
                 }
@@ -477,13 +485,15 @@ namespace HandCarftBaseServer.Controllers
                     RedirectToBank = true,
                     PostPrice = customerOrder.PostServicePrice
                 };
-
-                return SingleResult<InsertOrderResultDto>.GetSuccessfulResult(result);
+                var finalres = SingleResult<InsertOrderResultDto>.GetSuccessfulResult(result);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, order);
+                return finalres;
 
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), order);
                 return SingleResult<InsertOrderResultDto>.GetFailResult(e.Message);
 
             }
@@ -505,10 +515,7 @@ namespace HandCarftBaseServer.Controllers
                 var customerOrder = _repository.CustomerOrder.FindByCondition(c => c.Id == customerOrderId && c.CustomerId == customerId).FirstOrDefault();
 
                 if (customerOrder == null)
-                {
-
-                    return SingleResult<string>.GetFailResult("سفارش وجود ندارد با سفارش مربوط به کاربر جاری نمی باشد");
-                }
+                    throw new BusinessException(XError.BusinessErrors.InvalidOrder());
 
                 var request = new ZarinPallRequest
                 {
@@ -532,12 +539,14 @@ namespace HandCarftBaseServer.Controllers
                 };
                 _repository.CustomerOrderPayment.Create(customerOrderPayment);
                 _repository.Save();
+                var finalres = SingleResult<string>.GetSuccessfulResult("https://www.zarinpal.com/pg/StartPay/" + res.authority);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, customerOrderId);
+                return finalres;
 
-                return SingleResult<string>.GetSuccessfulResult("https://www.zarinpal.com/pg/StartPay/" + res.authority);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), customerOrderId);
 
                 return SingleResult<string>.GetFailResult(e.Message);
 
@@ -561,9 +570,7 @@ namespace HandCarftBaseServer.Controllers
                 var orderpeymnt = _repository.CustomerOrderPayment.FindByCondition(c => c.TraceNo == authority)
                     .FirstOrDefault();
                 if (orderpeymnt == null)
-                {
-                    return SingleResult<string>.GetFailResult("اطلاعاتی برای پارامترهای ارسالی یافت نشد.");
-                }
+                    throw new BusinessException(XError.BusinessErrors.PaymentInfoNotFound());
 
 
                 var customerOrderId = orderpeymnt.CustomerOrderId;
@@ -593,7 +600,7 @@ namespace HandCarftBaseServer.Controllers
                     var sendEmail = new SendEmail();
                     var email = customer.Email;
                     sendEmail.SendSuccessOrderPayment(email, orderpeymnt.OrderNo, customerOrderId.Value);
-                    _logger.LogInformation($"پرداخت موفق شماره تراکنش {authority}", authority);
+                  
 
 
                     var productist = _repository.CustomerOrderProduct.FindByCondition(c => c.CustomerOrderId == customerOrderId).Select(c => c.Product).ToList();
@@ -608,12 +615,9 @@ namespace HandCarftBaseServer.Controllers
 
                     sellerList.ForEach(c =>
                     {
-                        if (c != null)
-                        {
-                            var sendSms = new SendSMS();
-                            sendSms.SendOrderSmsForSeller(c.Value);
-
-                        }
+                        if (c == null) return;
+                        var sendSms = new SendSMS();
+                        sendSms.SendOrderSmsForSeller(c.Value);
 
 
                     });
@@ -621,7 +625,10 @@ namespace HandCarftBaseServer.Controllers
 
                     _repository.Save();
 
-                    return SingleResult<string>.GetSuccessfulResult("عملیات پرداخت با موفقیت انجام شد.");
+                    var finalres = SingleResult<string>.GetSuccessfulResult("عملیات پرداخت با موفقیت انجام شد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, customerOrderId);
+                    return finalres;
+               
 
                 }
                 else
@@ -631,8 +638,8 @@ namespace HandCarftBaseServer.Controllers
                     orderpeymnt.TransactionDate = DateTime.Now.Ticks;
                     _repository.CustomerOrderPayment.Update(orderpeymnt);
                     _repository.Save();
-                    _logger.LogInformation($"پرداخت ناموفق شماره تراکنش {authority}", authority);
-                    return SingleResult<string>.GetFailResult("پرداخت نا موفق");
+                   
+                   throw new BusinessException(XError.BusinessErrors.FailedPayment());
 
                 }
 
@@ -640,7 +647,8 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), authority, status);
+
                 return SingleResult<string>.GetFailResult("خطا در سامانه");
             }
         }
@@ -660,11 +668,12 @@ namespace HandCarftBaseServer.Controllers
                 var result = _mapper.Map<CustomerOrderFullDto>(res);
 
                 var finalresult = SingleResult<CustomerOrderFullDto>.GetSuccessfulResult(result);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalresult, null, orderId);
                 return finalresult;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), orderId);
 
                 return SingleResult<CustomerOrderFullDto>.GetFailResult(e.Message);
             }
@@ -688,11 +697,12 @@ namespace HandCarftBaseServer.Controllers
                 var result = _mapper.Map<List<CustomerOrderDto>>(res);
 
                 var finalresult = ListResult<CustomerOrderDto>.GetSuccessfulResult(result);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalresult, null, finalStatusId);
                 return finalresult;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), finalStatusId);
 
                 return ListResult<CustomerOrderDto>.GetFailResult(e.Message);
             }
@@ -719,11 +729,12 @@ namespace HandCarftBaseServer.Controllers
                     .ToList();
 
                 var finalresult = ListResult<OrderCountGroupByStatusDto>.GetSuccessfulResult(res);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalresult, null);
                 return finalresult;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
 
                 return ListResult<OrderCountGroupByStatusDto>.GetFailResult(e.Message);
             }
@@ -761,13 +772,13 @@ namespace HandCarftBaseServer.Controllers
                         Status = c.FinalStatus.Name,
                         Orderdate = DateTimeFunc.TimeTickToShamsi(c.CustomerOrder.OrderDate.Value)
                     }).OrderByDescending(c => c.Id).ToList();
-
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null);
                 return Ok(res);
 
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return BadRequest(e.Message);
             }
 
@@ -784,10 +795,10 @@ namespace HandCarftBaseServer.Controllers
             {
                 var userid = ClaimPrincipalFactory.GetUserId(User);
                 var seller = _repository.Seller.FindByCondition(c => c.UserId == userid || true).FirstOrDefault();
-                if (seller == null) return Unauthorized();
+                if (seller == null) throw new BusinessException(XError.AuthenticationErrors.NotHaveRequestedRole());
                 var product = _repository.CustomerOrderProduct.FindByCondition(c => c.Id == customerOrderProductId)
                     .FirstOrDefault();
-                if (product == null) return NotFound("کد محصول اشتباه است");
+                if (product == null) throw new BusinessException(XError.GetDataErrors.NotFound());
                 product.FinalStatusId = 23;
                 _repository.CustomerOrderProduct.Update(product);
                 _repository.Save();
@@ -796,7 +807,7 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), customerOrderProductId);
                 return BadRequest(e.Message);
             }
 

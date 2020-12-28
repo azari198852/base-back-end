@@ -11,49 +11,49 @@ using NLog.Web;
 
 namespace HandCarftBaseServer
 {
-    //public class Program
-    //{
-    //    public static void Main(string[] args)
-    //    {
-    //        CreateHostBuilder(args).Build().Run();
-    //    }
-
-    //    public static IHostBuilder CreateHostBuilder(string[] args) =>
-    //        Host.CreateDefaultBuilder(args)
-    //            .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
-    //}
     public class Program
     {
         public static void Main(string[] args)
         {
-            var logger = NLogBuilder.ConfigureNLog("nlog.config").GetCurrentClassLogger();
-            try
-            {
-                logger.Debug("Starting host builder");
-                CreateHostBuilder(args).Build().Run();
-            }
-            catch (Exception exception)
-            {
-                logger.Error(exception, "Stopped program because of exception");
-                throw;
-            }
-            finally
-            {
-                NLog.LogManager.Shutdown();
-            }
+            CreateHostBuilder(args).Build().Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                })
-                .ConfigureLogging(logging =>
-                {
-                    logging.ClearProviders();
-                    logging.SetMinimumLevel(LogLevel.Trace);
-                })
-                .UseNLog();
+                .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
     }
+    //public class Program
+    //{
+    //    public static void Main(string[] args)
+    //    {
+    //        var logger = NLogBuilder.ConfigureNLog("nlog.config").GetCurrentClassLogger();
+    //        try
+    //        {
+    //            logger.Debug("Starting host builder");
+    //            CreateHostBuilder(args).Build().Run();
+    //        }
+    //        catch (Exception exception)
+    //        {
+    //            logger.Error(exception, "Stopped program because of exception");
+    //            throw;
+    //        }
+    //        finally
+    //        {
+    //            NLog.LogManager.Shutdown();
+    //        }
+    //    }
+
+    //    public static IHostBuilder CreateHostBuilder(string[] args) =>
+    //        Host.CreateDefaultBuilder(args)
+    //            .ConfigureWebHostDefaults(webBuilder =>
+    //            {
+    //                webBuilder.UseStartup<Startup>();
+    //            })
+    //            .ConfigureLogging(logging =>
+    //            {
+    //                logging.ClearProviders();
+    //                logging.SetMinimumLevel(LogLevel.Trace);
+    //            })
+    //            .UseNLog();
+    //}
 }

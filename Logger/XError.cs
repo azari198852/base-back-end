@@ -38,7 +38,16 @@ namespace Logger
         { // starts from 4000
             public static XError FileMaxSizeReach() => new XError(4000, "حجم فایل بیش از مقدار مجاز می باشد.");
             public static XError UserAlreadyExists() => new XError(4002, "کاربر با مشخصات وارد شده در سامانه موجود می باشد");
-            public static XError UserRoleNotSelected() => new XError(4003, "نقشی برای کاربر انتخاب نشده است");
+            public static XError InvalidOrder() => new XError(4003, "سفارش وجود ندارد با سفارش مربوط به کاربر جاری نمی باشد");
+            public static XError PaymentInfoNotFound() => new XError(4004, "اطلاعاتی برای پارامترهای ارسالی یافت نشد");
+            public static XError FailedPayment() => new XError(4005, "پرداخت نا موفق");
+
+        }
+
+        public class IncomingSerivceErrors
+        { // starts from 5000
+            public static XError PostSeerivcError() => new XError(5000, "خطا در دریافت اطلاعات پستی");
+
 
         }
     }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using Entities.DataTransferObjects;
 using Entities.Models;
 using Entities.UIResponse;
 using HandCarftBaseServer.Tools;
+using Logger;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -30,9 +32,9 @@ namespace HandCarftBaseServer.Controllers
         public IConfiguration _configuration;
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repository;
-        private readonly ILogger<CatProductController> _logger;
+        private readonly ILogHandler _logger;
 
-        public AccountController(IConfiguration configuration, IMapper mapper, IRepositoryWrapper repository, ILogger<CatProductController> logger)
+        public AccountController(IConfiguration configuration, IMapper mapper, IRepositoryWrapper repository, ILogHandler logger)
         {
             _configuration = configuration;
             _mapper = mapper;
@@ -44,43 +46,54 @@ namespace HandCarftBaseServer.Controllers
 
         [HttpPost]
         [Route("Account/Login")]
-        public async Task<IActionResult> Login(UserLoginModel userLogin)
+        public IActionResult Login(UserLoginModel userLogin)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            var user = _repository.Users.FindByCondition(c => c.Username == userLogin.Username && c.Hpassword == userLogin.Password)
-                .Include(c => c.UserRole)
-                .FirstOrDefault();
-
-            if (user == null) return BadRequest("Invalid credentials");
+            try
             {
-                //create claims details based on the user information
-                var roleId = _repository.Role.FindByCondition(c => c.Id == user.UserRole.FirstOrDefault().Role)
-                    .Select(c => c.Id).FirstOrDefault();
-                var claims = new[] {
-                    new Claim(JwtRegisteredClaimNames.Sub, _configuration["Jwt:Subject"]),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
-                    new Claim("Id", user.Id.ToString()),
-                    new Claim("FullName", user.FullName),
-                    new Claim("UserName", user.Username),
-                    new Claim("Email", user.Email),
-                    new Claim("role", roleId.ToString())
-                };
+                if (!ModelState.IsValid) return BadRequest(ModelState);
+                var user = _repository.Users.FindByCondition(c => c.Username == userLogin.Username && c.Hpassword == userLogin.Password)
+                    .Include(c => c.UserRole)
+                    .FirstOrDefault();
 
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+                if (user == null) throw new BusinessException(XError.AuthenticationErrors.UserNameOrPasswordIsWrong());
+                {
 
-                var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                    var roleId = _repository.Role.FindByCondition(c => c.Id == user.UserRole.FirstOrDefault().Role)
+                        .Select(c => c.Id).FirstOrDefault();
+                    var claims = new[] {
+                        new Claim(JwtRegisteredClaimNames.Sub, _configuration["Jwt:Subject"]),
+                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                        new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
+                        new Claim("Id", user.Id.ToString()),
+                        new Claim("FullName", user.FullName),
+                        new Claim("UserName", user.Username),
+                        new Claim("Email", user.Email),
+                        new Claim("role", roleId.ToString())
+                    };
 
-                var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims, expires: DateTime.UtcNow.AddDays(1), signingCredentials: signIn);
-                var res = new { token = new JwtSecurityTokenHandler().WriteToken(token), Fullname = user.FullName };
-                return Ok(res);
+                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+
+                    var signIn = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+                    var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims, expires: DateTime.UtcNow.AddDays(1), signingCredentials: signIn);
+                    var res = new { token = new JwtSecurityTokenHandler().WriteToken(token), Fullname = user.FullName };
+                    _logger.LogData(MethodBase.GetCurrentMethod(), res, null, userLogin);
+                    return Ok(res);
+                }
+
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), userLogin);
+                return BadRequest(e.Message);
+
             }
 
         }
 
         [HttpPost]
         [Route("Account/SellerLogin")]
-        public async Task<IActionResult> SellerLogin(UserLoginModel userLogin)
+        public IActionResult SellerLogin(UserLoginModel userLogin)
         {
             try
             {
@@ -90,7 +103,7 @@ namespace HandCarftBaseServer.Controllers
                     .Include(c => c.UserRole)
                     .FirstOrDefault();
 
-                if (user == null || user.UserRole.All(c => c.Role != 3)) return BadRequest("Invalid credentials");
+                if (user == null || user.UserRole.All(c => c.Role != 3)) throw new BusinessException(XError.AuthenticationErrors.UserNameOrPasswordIsWrong());
                 {
                     //create claims details based on the user information
                     var roleId = _repository.Role.FindByCondition(c => c.Id == user.UserRole.FirstOrDefault().Role)
@@ -112,12 +125,13 @@ namespace HandCarftBaseServer.Controllers
 
                     var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims, expires: DateTime.UtcNow.AddDays(1), signingCredentials: signIn);
                     var res = new { token = new JwtSecurityTokenHandler().WriteToken(token), Fullname = user.FullName };
+                    _logger.LogData(MethodBase.GetCurrentMethod(), res, null, userLogin);
                     return Ok(res);
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), userLogin);
                 return BadRequest(e.Message);
             }
 
@@ -179,6 +193,7 @@ namespace HandCarftBaseServer.Controllers
                         var sms = new SendSMS();
                         sms.SendLoginSms(mobileNo.Value, code);
                         var ress = new LoginRegisterDto { UserId = _user.Id, IsExist = false, LoginByCode = true };
+                        _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo);
                         return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
 
                     }
@@ -196,7 +211,7 @@ namespace HandCarftBaseServer.Controllers
                                 Mobile = user.Mobile,
                                 Name = user.FullName,
                                 UserId = user.Id
-                                
+
 
                             };
                             _repository.Customer.Create(customer);
@@ -217,13 +232,14 @@ namespace HandCarftBaseServer.Controllers
 
 
                             });
-                           
-                         
+
+
                             _repository.Save();
 
                             var sms = new SendSMS();
                             sms.SendLoginSms(mobileNo.Value, code);
                             var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
+                            _logger.LogData(MethodBase.GetCurrentMethod(), ressss, null, email, mobileNo);
                             return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
                         }
                         else
@@ -231,6 +247,7 @@ namespace HandCarftBaseServer.Controllers
 
                             _repository.Save();
                             var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
+                            _logger.LogData(MethodBase.GetCurrentMethod(), ressss, null, email, mobileNo);
                             return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
 
 
@@ -279,6 +296,7 @@ namespace HandCarftBaseServer.Controllers
                         SendEmail em = new SendEmail();
                         em.SendLoginEmail(email, code);
                         var ress = new LoginRegisterDto { UserId = _user.Id, IsExist = false, LoginByCode = true };
+                        _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo);
                         return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
 
                     }
@@ -322,6 +340,7 @@ namespace HandCarftBaseServer.Controllers
                             var em = new SendEmail();
                             em.SendLoginEmail(email, code);
                             var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
+                            _logger.LogData(MethodBase.GetCurrentMethod(), ressss, null, email, mobileNo);
                             return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
                         }
                         else
@@ -329,6 +348,7 @@ namespace HandCarftBaseServer.Controllers
 
                             _repository.Save();
                             var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
+                            _logger.LogData(MethodBase.GetCurrentMethod(), ressss, null, email, mobileNo);
                             return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
 
 
@@ -342,6 +362,7 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), email, mobileNo);
                 return SingleResult<LoginRegisterDto>.GetFailResult("خطا در سامانه");
             }
 
@@ -362,7 +383,15 @@ namespace HandCarftBaseServer.Controllers
                 var activation = _repository.UserActivation.FindByCondition(c =>
                         c.UserId == userId && c.SendedCode == activationCode && c.EndDateTime > time && c.LoginType == 1)
                     .FirstOrDefault();
-                if (activation == null) return SingleResult<LoginResultDto>.GetFailResult("کد وارد شده صحیح نمی باشد");
+                if (activation == null)
+                {
+                    var ress = SingleResult<LoginResultDto>.GetFailResult("کد وارد شده صحیح نمی باشد");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, userId, activationCode);
+                    return ress;
+
+                }
+
+
 
                 var user = _repository.Users.FindByCondition(c => c.Id == userId)
                     .Include(c => c.UserRole)
@@ -391,11 +420,13 @@ namespace HandCarftBaseServer.Controllers
                 var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims,
                     expires: DateTime.UtcNow.AddHours(1), signingCredentials: signIn);
                 var res = new LoginResultDto { Token = new JwtSecurityTokenHandler().WriteToken(token), Fullname = user.FullName };
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null, userId, activationCode);
                 return SingleResult<LoginResultDto>.GetSuccessfulResult(res);
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), userId, activationCode);
                 return SingleResult<LoginResultDto>.GetFailResult(e.Message);
             }
 
@@ -416,7 +447,12 @@ namespace HandCarftBaseServer.Controllers
                 var user = _repository.Users.FindByCondition(c => c.Id == userId && c.Hpassword == pass)
                     .Include(c => c.UserRole)
                     .FirstOrDefault();
-                if (user == null || user.UserRole.All(c => c.Role != 2)) return SingleResult<LoginResultDto>.GetFailResult("نام کاربری یا کلمه عبور صحیح نمی باشد.");
+                if (user == null || user.UserRole.All(c => c.Role != 2))
+                {
+                    var ress = SingleResult<LoginResultDto>.GetFailResult("نام کاربری یا کلمه عبور صحیح نمی باشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, userId, "***");
+                    return ress;
+                }
 
                 //create claims details based on the user information
                 var claims = new[]
@@ -438,11 +474,13 @@ namespace HandCarftBaseServer.Controllers
                 var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims,
                     expires: DateTime.UtcNow.AddHours(1), signingCredentials: signIn);
                 var res = new LoginResultDto { Token = new JwtSecurityTokenHandler().WriteToken(token), Fullname = user.FullName };
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null, userId, "***");
                 return SingleResult<LoginResultDto>.GetSuccessfulResult(res);
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), userId, "***");
                 return SingleResult<LoginResultDto>.GetFailResult(e.Message);
             }
 
@@ -461,10 +499,22 @@ namespace HandCarftBaseServer.Controllers
             {
 
                 var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
-                if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                if (user == null || user.UserRole.All(c => c.Role != 2))
+                {
+
+                    var ress = VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo);
+                    return ress;
+                }
+
                 var now = DateTime.Now.Ticks;
-                if (_repository.UserActivation.FindByCondition(c => c.UserId == user.Id && c.EndDateTime > now && c.LoginType == 2).Any())
-                    return VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
+                if (_repository.UserActivation
+                    .FindByCondition(c => c.UserId == user.Id && c.EndDateTime > now && c.LoginType == 2).Any())
+                {
+                    var ress = VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo);
+                    return ress;
+                }
 
                 var random = new Random();
                 var code = random.Next(1000, 9999);
@@ -505,12 +555,14 @@ namespace HandCarftBaseServer.Controllers
                 _repository.Users.Update(user);
                 _repository.Save();
                 //create claims details based on the user information
-
-                return VoidResult.GetSuccessResult("کد فعال سازی برای بازیابی رمز عبور ، با موفقیت ارسال شد");
+                var res = VoidResult.GetSuccessResult("کد فعال سازی برای بازیابی رمز عبور ، با موفقیت ارسال شد");
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null, email, mobileNo);
+                return res;
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), email, mobileNo);
                 return VoidResult.GetFailResult(e.Message);
             }
 
@@ -529,21 +581,36 @@ namespace HandCarftBaseServer.Controllers
             {
 
                 var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
-                if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                if (user == null || user.UserRole.All(c => c.Role != 2))
+                {
+                    var ress = VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo, code, pass);
+                    return ress;
+                }
                 var now = DateTime.Now.Ticks;
                 var s = _repository.UserActivation.FindByCondition(c =>
                     c.UserId == user.Id && c.EndDateTime > now && c.SendedCode == code).FirstOrDefault();
-                if (s == null) return VoidResult.GetFailResult("کد وارد شده جهت تغییر کلمه عبور صحیح نمی باشد.");
+                if (s == null)
+                {
+                    var ress = VoidResult.GetFailResult("کد وارد شده جهت تغییر کلمه عبور صحیح نمی باشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo, code, pass);
+                    return ress;
+
+                }
+
+
 
                 user.Hpassword = pass;
                 _repository.Users.Update(user);
                 _repository.Save();
-
-                return VoidResult.GetSuccessResult("زمز عبور با نوفقیت تغییر یافت .");
+                var res = VoidResult.GetSuccessResult("زمز عبور با نوفقیت تغییر یافت .");
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null, email, mobileNo, code, pass);
+                return res;
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), email, mobileNo, code, pass);
                 return VoidResult.GetFailResult(e.Message);
             }
 
@@ -562,10 +629,21 @@ namespace HandCarftBaseServer.Controllers
             {
 
                 var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null) || (c.Id == userId && userId != null)).Include(c => c.UserRole).FirstOrDefault();
-                if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                if (user == null || user.UserRole.All(c => c.Role != 2))
+                {
+                    var ress = VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo, userId);
+                    return ress;
+
+                }
                 var now = DateTime.Now.Ticks;
-                if (_repository.UserActivation.FindByCondition(c => (c.UserId == user.Id) && (c.EndDateTime > now) && (c.LoginType == 1)).Any())
-                    return VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
+                if (_repository.UserActivation
+                    .FindByCondition(c => (c.UserId == user.Id) && (c.EndDateTime > now) && (c.LoginType == 1)).Any())
+                {
+                    var ress = VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo, userId);
+                    return ress;
+                }
 
                 var _random = new Random();
                 var code = _random.Next(1000, 9999);
@@ -596,12 +674,14 @@ namespace HandCarftBaseServer.Controllers
                 }
 
 
-
-                return VoidResult.GetSuccessResult("کد فعالسازی با موفقیت ارسال گردید .");
+                var res = VoidResult.GetSuccessResult("کد فعالسازی با موفقیت ارسال گردید .");
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null, email, mobileNo, userId);
+                return res;
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), email, mobileNo, userId);
                 return VoidResult.GetFailResult(e.Message);
             }
 
@@ -618,7 +698,13 @@ namespace HandCarftBaseServer.Controllers
             {
                 var userId = ClaimPrincipalFactory.GetUserId(User);
                 var user = _repository.Users.FindByCondition(c => c.Id == userId).Include(c => c.UserRole).FirstOrDefault();
-                if (user == null || user.UserRole.All(c => c.Role != 2)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                if (user == null || user.UserRole.All(c => c.Role != 2))
+                {
+                    var ress = VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, customerProfileDto);
+                    return ress;
+
+                }
 
                 user.FullName = customerProfileDto.Name + " " + customerProfileDto.Fname;
                 user.Email = customerProfileDto.Email;
@@ -638,19 +724,21 @@ namespace HandCarftBaseServer.Controllers
                 _repository.Customer.Update(customer);
 
                 _repository.Save();
-
-                return VoidResult.GetSuccessResult();
+                var res = VoidResult.GetSuccessResult();
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null, customerProfileDto);
+                return res;
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), customerProfileDto);
+
                 return VoidResult.GetFailResult(e.Message);
             }
 
 
         }
 
-        //[Authorize]
+        [Authorize]
         [HttpGet]
         [Route("Account/Customer_GetProfileInfo")]
         public SingleResult<CustomerProfileDto> Customer_GetProfileInfo()
@@ -661,16 +749,23 @@ namespace HandCarftBaseServer.Controllers
 
                 var customer = _repository.Customer.FindByCondition(c => c.UserId == userId).Include(c => c.Work).FirstOrDefault();
                 if (customer == null)
-                    return SingleResult<CustomerProfileDto>.GetFailResult("مشتری یافت نشد!", 201);
+                {
+                    var res = SingleResult<CustomerProfileDto>.GetFailResult("مشتری یافت نشد!", 201);
+                    _logger.LogData(MethodBase.GetCurrentMethod(), res, null);
+                    return res;
+                }
+
                 var cust = _mapper.Map<CustomerProfileDto>(customer);
 
                 cust.Password = null;
+                var ress = SingleResult<CustomerProfileDto>.GetSuccessfulResult(cust);
+                _logger.LogData(MethodBase.GetCurrentMethod(), ress, null);
+                return ress;
 
-                return SingleResult<CustomerProfileDto>.GetSuccessfulResult(cust);
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message, userId);
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return SingleResult<CustomerProfileDto>.GetFailResult(e.Message);
             }
 
@@ -727,7 +822,9 @@ namespace HandCarftBaseServer.Controllers
                     var sms = new SendSMS();
                     sms.SendLoginSms(mobileNo, code);
                     var ress = new LoginRegisterDto { UserId = _user.Id, IsExist = false, LoginByCode = true };
-                    return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
+                    var finalres = SingleResult<LoginRegisterDto>.GetSuccessfulResult(ress);
+                    _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, mobileNo);
+                    return finalres;
 
                 }
                 else
@@ -742,8 +839,7 @@ namespace HandCarftBaseServer.Controllers
                             UserId = user.Id,
                             Mobile = mobileNo,
                             Cdate = DateTime.Now.Ticks,
-                            Name = user.FullName
-
+                         
                         };
                         _repository.Seller.Create(seller);
 
@@ -767,14 +863,19 @@ namespace HandCarftBaseServer.Controllers
                         var sms = new SendSMS();
                         sms.SendLoginSms(mobileNo, code);
                         var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = true };
-                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+                        var finalres = SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+                        _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, mobileNo);
+                        return finalres;
+
                     }
                     else
                     {
 
                         _repository.Save();
                         var ressss = new LoginRegisterDto { UserId = user.Id, IsExist = true, LoginByCode = false };
-                        return SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+                        var finalres = SingleResult<LoginRegisterDto>.GetSuccessfulResult(ressss);
+                        _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, mobileNo);
+                        return finalres;
 
 
                     }
@@ -785,7 +886,7 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), mobileNo);
                 return SingleResult<LoginRegisterDto>.GetFailResult("خطا در سامانه");
             }
 
@@ -806,7 +907,12 @@ namespace HandCarftBaseServer.Controllers
                 var activation = _repository.UserActivation.FindByCondition(c =>
                         c.UserId == userId && c.SendedCode == activationCode && c.EndDateTime > time && c.LoginType == 1)
                     .FirstOrDefault();
-                if (activation == null) return SingleResult<LoginResultDto>.GetFailResult("کد وارد شده صحیح نمی باشد");
+                if (activation == null)
+                {
+                    var ress = SingleResult<LoginResultDto>.GetFailResult("کد وارد شده صحیح نمی باشد");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, userId, activationCode);
+                    return ress;
+                }
 
                 var user = _repository.Users.FindByCondition(c => c.Id == userId)
                     .Include(c => c.UserRole)
@@ -835,11 +941,15 @@ namespace HandCarftBaseServer.Controllers
                 var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims,
                     expires: DateTime.UtcNow.AddHours(1), signingCredentials: signIn);
                 var res = new LoginResultDto { Token = new JwtSecurityTokenHandler().WriteToken(token), Fullname = user.FullName };
-                return SingleResult<LoginResultDto>.GetSuccessfulResult(res);
+                var finalres = SingleResult<LoginResultDto>.GetSuccessfulResult(res);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, userId, activationCode);
+                return finalres;
+
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), userId, activationCode);
                 return SingleResult<LoginResultDto>.GetFailResult(e.Message);
             }
 
@@ -860,7 +970,13 @@ namespace HandCarftBaseServer.Controllers
                 var user = _repository.Users.FindByCondition(c => c.Id == userId && c.Hpassword == pass)
                     .Include(c => c.UserRole)
                     .FirstOrDefault();
-                if (user == null || user.UserRole.All(c => c.Role != 3)) return SingleResult<LoginResultDto>.GetFailResult("نام کاربری یا کلمه عبور صحیح نمی باشد.");
+                if (user == null || user.UserRole.All(c => c.Role != 3))
+                {
+                    var ress = SingleResult<LoginResultDto>.GetFailResult("نام کاربری یا کلمه عبور صحیح نمی باشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, userId, "***");
+                    return ress;
+
+                }
 
                 //create claims details based on the user information
                 var claims = new[]
@@ -882,11 +998,15 @@ namespace HandCarftBaseServer.Controllers
                 var token = new JwtSecurityToken(_configuration["Jwt:Issuer"], _configuration["Jwt:Audience"], claims,
                     expires: DateTime.UtcNow.AddHours(1), signingCredentials: signIn);
                 var res = new LoginResultDto { Token = new JwtSecurityTokenHandler().WriteToken(token), Fullname = user.FullName };
-                return SingleResult<LoginResultDto>.GetSuccessfulResult(res);
+                var finalres = SingleResult<LoginResultDto>.GetSuccessfulResult(res);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, userId, "***");
+                return finalres;
+
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), userId, "***");
                 return SingleResult<LoginResultDto>.GetFailResult(e.Message);
             }
 
@@ -905,10 +1025,21 @@ namespace HandCarftBaseServer.Controllers
             {
 
                 var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
-                if (user == null || user.UserRole.All(c => c.Role != 3)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                if (user == null || user.UserRole.All(c => c.Role != 3))
+                {
+                    var ress = VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo);
+                    return ress;
+
+                }
                 var now = DateTime.Now.Ticks;
-                if (_repository.UserActivation.FindByCondition(c => c.UserId == user.Id && c.EndDateTime > now && c.LoginType == 2).Any())
-                    return VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
+                if (_repository.UserActivation
+                    .FindByCondition(c => c.UserId == user.Id && c.EndDateTime > now && c.LoginType == 2).Any())
+                {
+                    var ress = VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo);
+                    return ress;
+                }
 
                 var random = new Random();
                 var code = random.Next(1000, 9999);
@@ -930,7 +1061,7 @@ namespace HandCarftBaseServer.Controllers
 
                     var sms = new SendSMS();
                     var bb = sms.SendRestPassSms(mobileNo.Value, code);
-                    _logger.LogInformation(bb);
+
 
                 }
                 else
@@ -951,12 +1082,15 @@ namespace HandCarftBaseServer.Controllers
                 _repository.Users.Update(user);
                 _repository.Save();
                 //create claims details based on the user information
+                var finalres = VoidResult.GetSuccessResult("کد فعال سازی برای بازیابی رمز عبور ، با موفقیت ارسال شد");
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, email, mobileNo);
+                return finalres;
 
-                return VoidResult.GetSuccessResult("کد فعال سازی برای بازیابی رمز عبور ، با موفقیت ارسال شد");
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), email, mobileNo);
                 return VoidResult.GetFailResult(e.Message);
             }
 
@@ -975,21 +1109,36 @@ namespace HandCarftBaseServer.Controllers
             {
 
                 var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null)).Include(c => c.UserRole).FirstOrDefault();
-                if (user == null || user.UserRole.All(c => c.Role != 3)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                if (user == null || user.UserRole.All(c => c.Role != 3))
+                {
+                    var ress = VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo, code, "***");
+                    return ress;
+
+                }
                 var now = DateTime.Now.Ticks;
                 var s = _repository.UserActivation.FindByCondition(c =>
                     c.UserId == user.Id && c.EndDateTime > now && c.SendedCode == code).FirstOrDefault();
-                if (s == null) return VoidResult.GetFailResult("کد وارد شده جهت تغییر کلمه عبور صحیح نمی باشد.");
+                if (s == null)
+                {
+                    var ress = VoidResult.GetFailResult("کد وارد شده جهت تغییر کلمه عبور صحیح نمی باشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo, code, "***");
+                    return ress;
+
+                }
 
                 user.Hpassword = pass;
                 _repository.Users.Update(user);
                 _repository.Save();
+                var finalres = VoidResult.GetSuccessResult("زمز عبور با نوفقیت تغییر یافت .");
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, email, mobileNo, code, "***");
+                return finalres;
 
-                return VoidResult.GetSuccessResult("زمز عبور با نوفقیت تغییر یافت .");
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), email, mobileNo, code, "***");
                 return VoidResult.GetFailResult(e.Message);
             }
 
@@ -1008,10 +1157,22 @@ namespace HandCarftBaseServer.Controllers
             {
 
                 var user = _repository.Users.FindByCondition(c => (c.Mobile == mobileNo && mobileNo != null) || (c.Email == email && email != null) || (c.Id == userId && userId != null)).Include(c => c.UserRole).FirstOrDefault();
-                if (user == null || user.UserRole.All(c => c.Role != 3)) return VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                if (user == null || user.UserRole.All(c => c.Role != 3))
+                {
+                    var ress = VoidResult.GetFailResult("کاربری با مشخصات وارد شده یافت نشد.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo, userId);
+                    return ress;
+
+                }
                 var now = DateTime.Now.Ticks;
-                if (_repository.UserActivation.FindByCondition(c => (c.UserId == user.Id) && (c.EndDateTime > now) && (c.LoginType == 1)).Any())
-                    return VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
+                if (_repository.UserActivation
+                    .FindByCondition(c => (c.UserId == user.Id) && (c.EndDateTime > now) && (c.LoginType == 1)).Any())
+                {
+                    var ress = VoidResult.GetFailResult("کد فعالسازی قبلا برای شما ارسال گردیده است.");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, email, mobileNo, userId);
+                    return ress;
+
+                }
 
                 var _random = new Random();
                 var code = _random.Next(1000, 9999);
@@ -1042,12 +1203,15 @@ namespace HandCarftBaseServer.Controllers
                 }
 
 
+                var finalres = VoidResult.GetSuccessResult("کد فعالسازی با موفقیت ارسال گردید .");
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, email, mobileNo, userId);
+                return finalres;
 
-                return VoidResult.GetSuccessResult("کد فعالسازی با موفقیت ارسال گردید .");
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), email, mobileNo, userId);
                 return VoidResult.GetFailResult(e.Message);
             }
 
@@ -1067,7 +1231,10 @@ namespace HandCarftBaseServer.Controllers
             {
                 if (input.Mobile == null)
                 {
-                    return LongResult.GetFailResult("شماره موبایل  وارد نشده است");
+                    var ress = LongResult.GetFailResult("شماره موبایل  وارد نشده است");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, input);
+                    return ress;
+
                 }
 
                 var user = _repository.Users.FindByCondition(c => (c.Mobile == input.Mobile) && c.UserRole.All(x => x.Role != 3))
@@ -1136,14 +1303,21 @@ namespace HandCarftBaseServer.Controllers
                     _user.Seller.Add(seller);
                     _repository.Users.Create(_user);
                     _repository.Save();
-                    return LongResult.GetSingleSuccessfulResult(seller.Id);
+
+                    var finalres = LongResult.GetSingleSuccessfulResult(seller.Id);
+                    _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, input);
+                    return finalres;
+               
                 }
 
-                return LongResult.GetFailResult("برای این شماره موبایل قبلا ثبت نام انجام شد است");
+                var res = LongResult.GetFailResult("برای این شماره موبایل قبلا ثبت نام انجام شد است");
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null, input);
+                return res;
+              
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), input);
                 return LongResult.GetFailResult("خطا در سامانه");
             }
 

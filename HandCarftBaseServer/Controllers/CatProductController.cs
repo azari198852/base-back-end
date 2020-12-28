@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -10,6 +11,7 @@ using Entities.DataTransferObjects;
 using Entities.Models;
 using Entities.UIResponse;
 using HandCarftBaseServer.Tools;
+using Logger;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -28,11 +30,11 @@ namespace HandCarftBaseServer.Controllers
 
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repository;
-        private readonly ILogger<CatProductController> _logger;
+        private readonly ILogHandler _logger;
         private readonly IConfiguration _configurationonfiguration;
 
 
-        public CatProductController(IMapper mapper, IRepositoryWrapper repository, ILogger<CatProductController> logger, IConfiguration configurationonfiguration)
+        public CatProductController(IMapper mapper, IRepositoryWrapper repository, ILogHandler logger, IConfiguration configurationonfiguration)
         {
             _mapper = mapper;
             _repository = repository;
@@ -66,7 +68,7 @@ namespace HandCarftBaseServer.Controllers
                     }
                     else
                     {
-                        return BadRequest(uploadFileStatus.Path);
+                        throw new BusinessException(uploadFileStatus.Path, 100);
                     }
                 }
 
@@ -79,7 +81,7 @@ namespace HandCarftBaseServer.Controllers
                     }
                     else
                     {
-                        return BadRequest(uploadFileStatus1.Path);
+                        throw new BusinessException(uploadFileStatus1.Path, 100);
                     }
 
                 }
@@ -93,7 +95,8 @@ namespace HandCarftBaseServer.Controllers
                     }
                     else
                     {
-                        return BadRequest(uploadFileStatus1.Path);
+                       
+                        throw new BusinessException(uploadFileStatus1.Path,100);
                     }
 
                 }
@@ -106,14 +109,15 @@ namespace HandCarftBaseServer.Controllers
                 _repository.CatProduct.Create(_catProduct);
 
                 _repository.Save();
-                return NoContent();
+                _logger.LogData(MethodBase.GetCurrentMethod(), _catProduct.Id, null);
+                return Ok(_catProduct.Id);
 
 
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
-                return BadRequest("");
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return BadRequest(e.Message);
             }
 
 
@@ -154,7 +158,7 @@ namespace HandCarftBaseServer.Controllers
                     }
                     else
                     {
-                        return BadRequest(uploadFileStatus.Path);
+                        throw new BusinessException(uploadFileStatus.Path, 100);
                     }
                 }
 
@@ -168,7 +172,7 @@ namespace HandCarftBaseServer.Controllers
                     }
                     else
                     {
-                        return BadRequest(uploadFileStatus1.Path);
+                        throw new BusinessException(uploadFileStatus1.Path, 100);
                     }
 
                 }
@@ -182,7 +186,7 @@ namespace HandCarftBaseServer.Controllers
                     }
                     else
                     {
-                        return BadRequest(uploadFileStatus1.Path);
+                        throw new BusinessException(uploadFileStatus1.Path, 100);
                     }
 
                 }
@@ -190,14 +194,15 @@ namespace HandCarftBaseServer.Controllers
                 _repository.CatProduct.Update(_catProduct);
                 _repository.Save();
                 FileManeger.FileRemover(deletedfile);
-                return NoContent();
+                return Ok(General.Results_.SuccessMessage());
+
 
 
 
             }
             catch (Exception e)
             {
-                _logger.LogError(e, e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return BadRequest(e.Message);
             }
 
@@ -218,11 +223,13 @@ namespace HandCarftBaseServer.Controllers
                 _repository.CatProduct.Update(_catProduct);
 
                 _repository.Save();
-                return NoContent();
+                _logger.LogData(MethodBase.GetCurrentMethod(), _catProduct.Id, null);
+                return Ok(General.Results_.SuccessMessage());
             }
             catch (Exception e)
             {
-                return BadRequest("");
+                _logger.LogError(e, MethodBase.GetCurrentMethod(),catProductId);
+                return BadRequest(e.Message);
             }
 
 
@@ -236,12 +243,14 @@ namespace HandCarftBaseServer.Controllers
             {
                 var res = _repository.CatProduct.FindByCondition(c => c.Id == catProductId)
                     .FirstOrDefault();
-                if (res == null) return NotFound();
+                if (res == null) throw new BusinessException(XError.GetDataErrors.NotFound());
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null, catProductId);
                 return Ok(res);
             }
             catch (Exception e)
             {
-                return BadRequest("");
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), catProductId);
+                return BadRequest(e.Message);
             }
         }
 
@@ -253,12 +262,14 @@ namespace HandCarftBaseServer.Controllers
             {
                 var res = _repository.CatProduct.FindByCondition(c => c.Id == catProductId && c.Ddate == null && c.DaDate == null)
                     .Include(c => c.CatProductLanguage).FirstOrDefault();
-                if (res == null) return NotFound();
+                if (res == null) throw new BusinessException(XError.GetDataErrors.NotFound());
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null, catProductId);
                 return Ok(res);
             }
             catch (Exception e)
             {
-                return BadRequest("");
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), catProductId);
+                return BadRequest(e.Message);
             }
         }
 
@@ -292,7 +303,8 @@ namespace HandCarftBaseServer.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest("");
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return BadRequest(e.Message);
             }
 
 
@@ -332,13 +344,13 @@ namespace HandCarftBaseServer.Controllers
                 var catProduct = _repository.CatProduct.FindByCondition(c => c.Ddate == null && c.DaDate == null)
                     .OrderByDescending(c => c.Product.Count)
                     .Select(c => new { c.Id, c.Name }).ToList().Take(7);
-
+                _logger.LogData(MethodBase.GetCurrentMethod(), catProduct, null);
                 return Ok(catProduct);
             }
             catch (Exception e)
             {
-
-                return BadRequest("Internal server error");
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return BadRequest(e.Message);
             }
 
         }
@@ -349,10 +361,19 @@ namespace HandCarftBaseServer.Controllers
         [Route("CatProduct/GetCatProductListForCmb")]
         public IActionResult GetCatProductListForCmb()
         {
-            var catProduct = _repository.CatProduct.FindByCondition(c => c.DaDate == null && c.Ddate == null)
-                .ToList();
-
-            return Ok(catProduct);
+            try
+            {
+                var catProduct = _repository.CatProduct.FindByCondition(c => c.DaDate == null && c.Ddate == null)
+                    .ToList();
+                _logger.LogData(MethodBase.GetCurrentMethod(), catProduct, null);
+                return Ok(catProduct);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return BadRequest(e.Message);
+            }
+          
         }
 
 
@@ -369,11 +390,13 @@ namespace HandCarftBaseServer.Controllers
             {
                 var catProduct = _repository.CatProduct.FindByCondition(c => c.Ddate == null && c.DaDate == null && c.Pid == null).Include(c => c.InverseP).ToList();
                 var finalresult = ListResult<CatProduct>.GetSuccessfulResult(catProduct);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalresult, null);
                 return finalresult;
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return ListResult<CatProduct>.GetFailResult(null);
             }
 
@@ -396,10 +419,12 @@ namespace HandCarftBaseServer.Controllers
                 var result = _mapper.Map<List<CatProductWithCountDto>>(catProduct);
 
                 var finalresult = ListResult<CatProductWithCountDto>.GetSuccessfulResult(result.OrderByDescending(c=>c.ProductCount).ToList());
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalresult, null);
                 return finalresult;
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return ListResult<CatProductWithCountDto>.GetFailResult(null);
             }
 
@@ -424,10 +449,12 @@ namespace HandCarftBaseServer.Controllers
                 var result = _mapper.Map<List<CatProductWithCountDto>>(catProduct);
 
                 var finalresult = ListResult<CatProductWithCountDto>.GetSuccessfulResult(result);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalresult, null, catId);
                 return finalresult;
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(),catId);
                 return ListResult<CatProductWithCountDto>.GetFailResult(e.Message);
             }
         }
@@ -444,10 +471,12 @@ namespace HandCarftBaseServer.Controllers
                 var catProduct = _repository.CatProduct.FindByCondition(c => c.DaDate == null && c.Ddate == null && (c.Id == 2 || c.Id == 44 || c.Id == 45 || c.Id == 73 || c.Id == 75)).OrderByDescending(c => c.Product.Count).Take(5).ToList();
 
                 var finalresult = ListResult<CatProduct>.GetSuccessfulResult(catProduct);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalresult, null);
                 return finalresult;
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return ListResult<CatProduct>.GetFailResult(null);
             }
 

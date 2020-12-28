@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using Contracts;
 using Entities;
 using Entities.Models;
-
+using Logger;
+using Logger.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +34,7 @@ namespace HandCarftBaseServer.Extensions
 
         public static void ConfigureLoggerService(this IServiceCollection services)
         {
-           // services.AddSingleton<ILoggerManager, LoggerManager>();
+            services.AddScoped<ILogHandler, LogHandler>();
         }
 
         public static void ConfigureSqlContext(this IServiceCollection services, IConfiguration config)
@@ -41,7 +42,8 @@ namespace HandCarftBaseServer.Extensions
             var connectionString = config["ConnectionStrings:DefaultConnection"];
             services.AddDbContext<BaseContext>(o => o.UseSqlServer(connectionString));
 
-
+            var logconnectionString = config["ConnectionStrings:LogConnection"];
+            services.AddDbContext<Log_DBContext>(o => o.UseSqlServer(logconnectionString));
         }
 
 

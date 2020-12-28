@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using AutoMapper;
 using Contracts;
@@ -9,11 +10,13 @@ using Entities.DataTransferObjects;
 using Entities.Models;
 using Entities.UIResponse;
 using HandCarftBaseServer.Tools;
+using Logger;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace HandCarftBaseServer.Controllers
 {
@@ -23,9 +26,9 @@ namespace HandCarftBaseServer.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repository;
-        private readonly ILogger<SellerController> _logger;
+        private readonly ILogHandler _logger;
 
-        public SellerController(IMapper mapper, IRepositoryWrapper repository, ILogger<SellerController> logger)
+        public SellerController(IMapper mapper, IRepositoryWrapper repository, ILogHandler logger)
         {
             _mapper = mapper;
             _repository = repository;
@@ -41,12 +44,13 @@ namespace HandCarftBaseServer.Controllers
             {
                 var res = _repository.Seller.FindByCondition(c => c.DaDate == null && c.Ddate == null)
                     .ToList();
-
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null);
                 return Ok(res);
             }
             catch (Exception e)
             {
-                return BadRequest("");
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return BadRequest(e.Message);
             }
         }
 
@@ -70,12 +74,13 @@ namespace HandCarftBaseServer.Controllers
 
                 })
                     .ToList();
-
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null);
                 return Ok(res);
             }
             catch (Exception e)
             {
-                return BadRequest("");
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return BadRequest(e.Message);
             }
         }
 
@@ -96,11 +101,14 @@ namespace HandCarftBaseServer.Controllers
                     .Include(c => c.SellerAddress)
                     .Include(c => c.SellerDocument).ThenInclude(c => c.Document).FirstOrDefault();
                 var result = _mapper.Map<SellerFullInfoDto>(res);
-                return SingleResult<SellerFullInfoDto>.GetSuccessfulResult(result);
 
+                var finalres = SingleResult<SellerFullInfoDto>.GetSuccessfulResult(result);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null);
+                return finalres;
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return SingleResult<SellerFullInfoDto>.GetFailResult(e.Message);
             }
 
@@ -116,12 +124,21 @@ namespace HandCarftBaseServer.Controllers
         [Route("Seller/UpdateSellerFullInfo")]
         public LongResult UpdateSellerFullInfo(SellerRegisterDto input)
         {
-            var seller = _repository.Seller.FindByCondition(c => c.UserId == ClaimPrincipalFactory.GetUserId(User)).FirstOrDefault();
+            var userId = ClaimPrincipalFactory.GetUserId(User);//10136
+            var seller = _repository.Seller.FindByCondition(c => c.UserId == userId).FirstOrDefault();
             if (seller == null)
-                return LongResult.GetFailResult("فروشنده پیدا نشد!");
+            {
+                var ress = LongResult.GetFailResult("فروشنده پیدا نشد!");
+                _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, input);
+                return ress;
+
+            }
+
             if (input.Mobile == null)
             {
-                return LongResult.GetFailResult("شماره موبایل  وارد نشده است");
+                var ress = LongResult.GetFailResult("شماره موبایل  وارد نشده است");
+                _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, input);
+                return ress;
             }
 
             try
@@ -129,9 +146,9 @@ namespace HandCarftBaseServer.Controllers
 
                 seller.Mobile = input.Mobile;
                 seller.Email = input.Email;
-                seller.Fname = input.Name;
+                seller.Name = input.Name;
                 seller.MelliCode = input.MelliCode;
-                seller.Name = input.Fname;
+                seller.Fname = input.Fname;
                 seller.MobileAppTypeId = input.MobileAppTypeId;
                 seller.HaveMobileApp = input.HaveMobileApp;
                 seller.RealOrLegal = input.RealOrLegal;
@@ -145,6 +162,13 @@ namespace HandCarftBaseServer.Controllers
                 seller.MobileAppVersion = input.MobileAppVersion;
                 seller.Gender = input.Gender;
                 seller.IdentityNo = input.IdentityNo;
+
+                if (!string.IsNullOrWhiteSpace(input.PassWord))
+                {
+                    var u = _repository.Users.FindByCondition(c => c.Id == userId).FirstOrDefault();
+                    u.Hpassword = input.PassWord;
+                    _repository.Users.Update(u);
+                }
 
                 if (input.Address.ID == 0)
                 {
@@ -161,9 +185,10 @@ namespace HandCarftBaseServer.Controllers
                         Xgps = input.Address.Xgps,
                         Ygps = input.Address.Ygps,
                         Cdate = DateTime.Now.Ticks,
+                        SellerId = seller.Id
 
                     };
-                    seller.SellerAddress.Add(sellerAddress);
+                    _repository.SellerAddress.Create(sellerAddress);
                     _repository.Seller.Update(seller);
                     _repository.Save();
                 }
@@ -192,12 +217,15 @@ namespace HandCarftBaseServer.Controllers
                     _repository.Save();
                 }
 
-                return LongResult.GetSingleSuccessfulResult(seller.Id);
+                var finalres = LongResult.GetSingleSuccessfulResult(seller.Id);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null,input);
+                return finalres;
+
 
             }
             catch (Exception e)
             {
-                _logger.LogError(e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), input);
                 return LongResult.GetFailResult("خطا در سامانه");
             }
 
@@ -216,16 +244,24 @@ namespace HandCarftBaseServer.Controllers
             {
                 var seller = _repository.Seller.FindByCondition(c => c.UserId == ClaimPrincipalFactory.GetUserId(User)).FirstOrDefault();
                 if (seller == null)
-                    return ListResult<SellerDocumentDto>.GetFailResult("فروشنده پیدا نشد!");
+                {
+                    var ress = ListResult<SellerDocumentDto>.GetFailResult("فروشنده پیدا نشد!");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null);
+                    return ress;
+                }
+
 
                 var res = _repository.SellerDocument.FindByCondition(c => c.SellerId == seller.Id).Include(c => c.Document)
                     .ToList();
                 var result = _mapper.Map<List<SellerDocumentDto>>(res);
-                return ListResult<SellerDocumentDto>.GetSuccessfulResult(result, result.Count);
+    
+                var finalres = ListResult<SellerDocumentDto>.GetSuccessfulResult(result, result.Count);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null);
+                return finalres;
             }
             catch (Exception e)
             {
-                _logger.LogError(e.Message);
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return ListResult<SellerDocumentDto>.GetFailResult(e.Message);
             }
 
