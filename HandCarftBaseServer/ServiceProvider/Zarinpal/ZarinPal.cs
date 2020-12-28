@@ -12,14 +12,14 @@ namespace HandCarftBaseServer.ServiceProvider.ZarinPal
     public class ZarinPal
     {
         private readonly string merchant_id = "82f5b82a-3422-4f9e-bb4d-0182c4dbf5a6";
-  
+
 
         public ZarinPalRequestResponse Request(ZarinPallRequest zarinPallRequest)
         {
             zarinPallRequest.merchant_id = merchant_id;
             zarinPallRequest.callback_url = Startup.StaticConfig["BankCallBack_Url"];
-            zarinPallRequest.metadata.mobile = "";
-            zarinPallRequest.metadata.email = "";
+            zarinPallRequest.metadata.mobile ??= "09353407341";
+            zarinPallRequest.metadata.email ??= "sahand.farshbaf@gmail.com";
 
             var body = JsonSerializer.Serialize(zarinPallRequest);
 
@@ -28,7 +28,7 @@ namespace HandCarftBaseServer.ServiceProvider.ZarinPal
             request.AddJsonBody(body);
 
             IRestResponse response = client.Execute(request);
-            var data = ((Newtonsoft.Json.Linq.JContainer) JObject.Parse(response.Content).First).First.ToString();
+            var data = ((Newtonsoft.Json.Linq.JContainer)JObject.Parse(response.Content).First).First.ToString();
             var error = ((Newtonsoft.Json.Linq.JContainer)JObject.Parse(response.Content).First).Next.First.ToString();
             if (data == "[]")
             {
@@ -41,8 +41,8 @@ namespace HandCarftBaseServer.ServiceProvider.ZarinPal
                 return result;
             }
 
-          
-          
+
+
         }
 
         public ZarinPalVerifyResponse VerifyPayment(ZarinPalVerifyRequest verifyRequest)

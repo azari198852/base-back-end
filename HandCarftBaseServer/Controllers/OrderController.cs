@@ -78,7 +78,7 @@ namespace HandCarftBaseServer.Controllers
                           CustomerName = c.Customer.Name + " " + c.Customer.Fname,
                           c.FinalPrice,
                           Status = c.FinalStatus.Name,
-                          PaymentStatus = c.CustomerOrderPayment.OrderByDescending(u => u.Id).Select(x=>x.FinalStatus.Name).FirstOrDefault(),
+                          PaymentStatus = c.CustomerOrderPayment.OrderByDescending(u => u.Id).Select(x => x.FinalStatus.Name).FirstOrDefault(),
                           Editable = c.CustomerOrderProduct.All(x => x.FinalStatusId == 23)
                       }).OrderByDescending(c => c.Id).ToList();
                 return Ok(res);
@@ -269,7 +269,7 @@ namespace HandCarftBaseServer.Controllers
                 customerOrder.ProductList = orerProductList;
                 var toCityId = _repository.CustomerAddress.FindByCondition(c => c.Id == order.CustomerAddressId).Include(c => c.City).Select(c => c.City.PostCode).FirstOrDefault();
 
-               
+
                 var postType = _repository.PostType.FindByCondition(c => c.Id == order.PostTypeId).FirstOrDefault();
                 var payType = _repository.PaymentType.FindByCondition(c => c.Id == order.PaymentTypeId)
                     .FirstOrDefault();
@@ -320,8 +320,8 @@ namespace HandCarftBaseServer.Controllers
             try
             {
                 var userId = ClaimPrincipalFactory.GetUserId(User);
-                var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).Select(c => c.Id)
-                    .FirstOrDefault();
+                var cc = _repository.Customer.FindByCondition(c => c.UserId == userId).FirstOrDefault();
+                var customerId = cc.Id;
                 var today = DateTime.Now.AddDays(-1).Ticks;
                 var orerProductList = new List<CustomerOrderProduct>();
 
@@ -407,7 +407,7 @@ namespace HandCarftBaseServer.Controllers
                 customerOrder.CustomerOrderProduct = orerProductList;
                 var toCityId = _repository.CustomerAddress.FindByCondition(c => c.Id == order.CustomerAddressId).Include(c => c.City).Select(c => c.City.PostCode).FirstOrDefault();
 
-              
+
                 var postType = _repository.PostType.FindByCondition(c => c.Id == order.PostTypeId).FirstOrDefault();
                 var payType = _repository.PaymentType.FindByCondition(c => c.Id == order.PaymentTypeId)
                     .FirstOrDefault();
@@ -444,7 +444,12 @@ namespace HandCarftBaseServer.Controllers
                 {
                     //  amount = (int)((customerOrder.FinalPrice.Value + customerOrder.PostServicePrice) * 10),
                     amount = (int)((customerOrder.FinalPrice.Value) * 10),
-                    description = "order NO: " + customerOrder.OrderNo
+                    description = "order NO: " + customerOrder.OrderNo,
+                    metadata = new ZarinPalRequestMetaData
+                    {
+                        mobile = "0" + cc.Mobile.ToString(),
+                        email = cc.Email
+                    }
                 };
                 var zarinPal = new ZarinPal();
                 var res = zarinPal.Request(request);
@@ -487,7 +492,7 @@ namespace HandCarftBaseServer.Controllers
         /// <summary>
         ///پرداخت مبلغ سفارش با آیدی سفارش
         /// </summary>
-        [Authorize]
+      //  [Authorize]
         [HttpGet]
         [Route("CustomerOrderPayment/MakePaymentByOrderId")]
         public SingleResult<string> MakePaymentByOrderId(long customerOrderId)
@@ -677,7 +682,7 @@ namespace HandCarftBaseServer.Controllers
             try
             {
                 var userId = ClaimPrincipalFactory.GetUserId(User);
-                var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).OrderByDescending(c=>c.Cdate).Select(c => c.Id)
+                var customerId = _repository.Customer.FindByCondition(c => c.UserId == userId).OrderByDescending(c => c.Cdate).Select(c => c.Id)
                     .FirstOrDefault();
                 var res = _repository.CustomerOrder.GetCustomerOrderList(customerId, finalStatusId);
                 var result = _mapper.Map<List<CustomerOrderDto>>(res);
