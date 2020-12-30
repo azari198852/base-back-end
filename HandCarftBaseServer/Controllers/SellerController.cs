@@ -268,6 +268,48 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
+        [Authorize]
+        [HttpPost]
+        [Route("Seller/SellerRegisterConfirm_UI")]
+        public VoidResult SellerRegisterConfirm_UI()
+        {
+            try
+            {
+                var seller = _repository.Seller.FindByCondition(c => c.UserId == ClaimPrincipalFactory.GetUserId(User)).FirstOrDefault();
+
+                if (seller == null)
+                {
+                    var ress = VoidResult.GetFailResult("فروشنده پیدا نشد!");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null);
+                    return ress;
+                }
+
+                var requiredDocumentList = _repository.Document.FindByCondition(c => c.CatDocument.Rkey == 1 && c.IsRequired==true && c.Ddate == null && c.DaDate == null).ToList();
+                var SellerUploadedDocument = _repository.SellerDocument.FindByCondition(c => c.SellerId == seller.Id && !string.IsNullOrWhiteSpace(c.FileUrl) && c.Document.IsRequired==true ).ToList();
+
+                if (requiredDocumentList.Count != SellerUploadedDocument.Count) {
+
+                    var ress = VoidResult.GetFailResult("تمامی مدارک بارگزاری نشده است!");
+                    _logger.LogData(MethodBase.GetCurrentMethod(), ress, null);
+                    return ress;
+                }
+
+
+                var finalres = VoidResult.GetSuccessResult();
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null);
+                return finalres;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return VoidResult.GetFailResult(e.Message);
+            }
+
+
+        }
+
+
+
         #region UI_Methods
 
 
