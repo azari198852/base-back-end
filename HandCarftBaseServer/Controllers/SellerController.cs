@@ -85,6 +85,119 @@ namespace HandCarftBaseServer.Controllers
         }
 
         /// <summary>
+        /// لیست سفارشات فروشنده  
+        /// </summary>
+        [Authorize]
+        [HttpGet]
+        [Route("Seller/GetSellerOrderList")]
+        public IActionResult GetSellerOrderList()
+        {
+            try
+            {
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+                var sellerId = _repository.Seller.GetSellerIdByUserId(userId);
+                var productList = _repository.CustomerOrderProduct.FindByCondition(c => c.Product.SellerId == sellerId)
+                    .Include(c => c.FinalStatus)
+                    .Include(c => c.CustomerOrder)
+                    .Select(c => new { c.Id, c.ProductCode, c.ProductName, c.CustomerOrder.OrderNo, c.OrderCount, c.ProductPrice, c.FinalStatus.Name })
+                    .OrderByDescending(c => c.Id).ToList();
+
+                _logger.LogData(MethodBase.GetCurrentMethod(), productList, null);
+                return Ok(productList);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return BadRequest(e.Message);
+            }
+        }
+
+        /// <summary>
+        ///  تغییر وضعیت کالای سفارش به آماده ارسال به مرکز پردازش   
+        /// </summary>
+        [Authorize]
+        [HttpPut]
+        [Route("Seller/UpdateStatusToReadyToSend")]
+        public IActionResult UpdateStatusToReadyToSend(long customerOrderProductId)
+        {
+            try
+            {
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+                var sellerId = _repository.Seller.GetSellerIdByUserId(userId);
+
+                var product = _repository.CustomerOrderProduct.FindByCondition(c => c.Id == customerOrderProductId)
+                    .FirstOrDefault();
+                if (product == null)
+                {
+                    throw new BusinessException(XError.GetDataErrors.NotFound());
+                }
+
+                if (product.FinalStatusId != 22)
+                {
+                    throw new BusinessException(XError.BusinessErrors.InvalidOrderProductStatus());
+                }
+
+                product.FinalStatusId = 23;
+                product.Mdate = DateTime.Now.Ticks;
+                product.MuserId = userId;
+                _repository.CustomerOrderProduct.Update(product);
+                _repository.Save();
+
+                _logger.LogData(MethodBase.GetCurrentMethod(), General.Results_.SuccessMessage(), null, customerOrderProductId);
+                return Ok(General.Results_.SuccessMessage());
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), customerOrderProductId);
+                return BadRequest(e.Message);
+            }
+        }
+
+        /// <summary>
+        ///  تغییر وضعیت کالای سفارش به ارسال به مرکز پردازش   
+        /// </summary>
+        [Authorize]
+        [HttpPut]
+        [Route("Seller/UpdateStatusToSent")]
+        public IActionResult UpdateStatusToSent(long customerOrderProductId)
+        {
+            try
+            {
+                var userId = ClaimPrincipalFactory.GetUserId(User);
+                var sellerId = _repository.Seller.GetSellerIdByUserId(userId);
+
+                var product = _repository.CustomerOrderProduct.FindByCondition(c => c.Id == customerOrderProductId)
+                    .FirstOrDefault();
+                if (product == null)
+                {
+                    throw new BusinessException(XError.GetDataErrors.NotFound());
+                }
+
+                if (product.FinalStatusId != 23)
+                {
+                    throw new BusinessException(XError.BusinessErrors.InvalidOrderProductStatus());
+                }
+
+                product.FinalStatusId = 28;
+                product.Mdate = DateTime.Now.Ticks;
+                product.MuserId = userId;
+                _repository.CustomerOrderProduct.Update(product);
+                _repository.Save();
+
+                _logger.LogData(MethodBase.GetCurrentMethod(), General.Results_.SuccessMessage(), null, customerOrderProductId);
+                return Ok(General.Results_.SuccessMessage());
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), customerOrderProductId);
+                return BadRequest(e.Message);
+            }
+        }
+
+
+        #region UI_Methods
+
+        /// <summary>
         /// دریافت مشخصات صنعتگر  
         /// </summary>
         [Authorize]
@@ -218,7 +331,7 @@ namespace HandCarftBaseServer.Controllers
                 }
 
                 var finalres = LongResult.GetSingleSuccessfulResult(seller.Id);
-                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null,input);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, input);
                 return finalres;
 
 
@@ -254,7 +367,7 @@ namespace HandCarftBaseServer.Controllers
                 var res = _repository.SellerDocument.FindByCondition(c => c.SellerId == seller.Id).Include(c => c.Document)
                     .ToList();
                 var result = _mapper.Map<List<SellerDocumentDto>>(res);
-    
+
                 var finalres = ListResult<SellerDocumentDto>.GetSuccessfulResult(result, result.Count);
                 _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null);
                 return finalres;
@@ -268,6 +381,9 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
+        /// <summary>
+        /// لیست مدارک صنعتگر  ثبت نهایی
+        /// </summary>
         [Authorize]
         [HttpPost]
         [Route("Seller/SellerRegisterConfirm_UI")]
@@ -284,10 +400,11 @@ namespace HandCarftBaseServer.Controllers
                     return ress;
                 }
 
-                var requiredDocumentList = _repository.Document.FindByCondition(c => c.CatDocument.Rkey == 1 && c.IsRequired==true && c.Ddate == null && c.DaDate == null).ToList();
-                var SellerUploadedDocument = _repository.SellerDocument.FindByCondition(c => c.SellerId == seller.Id && !string.IsNullOrWhiteSpace(c.FileUrl) && c.Document.IsRequired==true ).ToList();
+                var requiredDocumentList = _repository.Document.FindByCondition(c => c.CatDocument.Rkey == 1 && c.IsRequired == true && c.Ddate == null && c.DaDate == null).ToList();
+                var SellerUploadedDocument = _repository.SellerDocument.FindByCondition(c => c.SellerId == seller.Id && !string.IsNullOrWhiteSpace(c.FileUrl) && c.Document.IsRequired == true).ToList();
 
-                if (requiredDocumentList.Count != SellerUploadedDocument.Count) {
+                if (requiredDocumentList.Count != SellerUploadedDocument.Count)
+                {
 
                     var ress = VoidResult.GetFailResult("تمامی مدارک بارگزاری نشده است!");
                     _logger.LogData(MethodBase.GetCurrentMethod(), ress, null);
@@ -307,12 +424,6 @@ namespace HandCarftBaseServer.Controllers
 
 
         }
-
-
-
-        #region UI_Methods
-
-
 
         #endregion
     }

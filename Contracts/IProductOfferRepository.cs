@@ -5,8 +5,7 @@ using Entities.Models;
 
 namespace Contracts
 {
-    public interface ISellerRepository : IRepositoryBase<Seller>
+   public interface IProductOfferRepository:IRepositoryBase<ProductOffer>
     {
-        long GetSellerIdByUserId(long userId);
     }
 }

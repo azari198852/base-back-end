@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using Entities.Models;
 using Entities.Params;
 using Entities.UIResponse;
 using HandCarftBaseServer.Tools;
+using Logger;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,9 +30,9 @@ namespace HandCarftBaseServer.Controllers
     {
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repository;
-        private readonly ILogger<ProductController> _logger;
+        private readonly ILogHandler _logger;
 
-        public ProductController(IMapper mapper, IRepositoryWrapper repository, ILogger<ProductController> logger)
+        public ProductController(IMapper mapper, IRepositoryWrapper repository, ILogHandler logger)
         {
             _mapper = mapper;
             _repository = repository;
@@ -227,8 +229,8 @@ namespace HandCarftBaseServer.Controllers
             catch (Exception e)
             {
                 FileManeger.FileRemover(new List<string> { coverpath, downloadpath });
-                _logger.LogError(e, e.Message);
-                return BadRequest("Internal server error");
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return BadRequest(e.Message);
             }
 
         }
@@ -914,7 +916,7 @@ namespace HandCarftBaseServer.Controllers
 
                 var res = _repository.Product.FindByCondition(c => c.Ddate == null && c.DaDate == null && c.Name.Contains(name)).Include(c => c.CatProduct).ToList();
                 var result = _mapper.Map<List<ProductGeneralSearchResultDto>>(res);
-                var finalresult = ListResult<ProductGeneralSearchResultDto>.GetSuccessfulResult(result,result.Count);
+                var finalresult = ListResult<ProductGeneralSearchResultDto>.GetSuccessfulResult(result, result.Count);
                 return finalresult;
 
             }
@@ -978,12 +980,13 @@ namespace HandCarftBaseServer.Controllers
                 var product = _repository.Product.FindByCondition(c => c.Id.Equals(sellerProductUpdateModel.ProductId)).FirstOrDefault();
                 if (product == null)
                 {
-                    return NotFound();
+                    throw new BusinessException(XError.GetDataErrors.NotFound());
 
                 }
                 product.Mdate = DateTime.Now.Ticks;
                 product.MuserId = ClaimPrincipalFactory.GetUserId(User);
                 product.Price = sellerProductUpdateModel.Price;
+                product.CanHaveOrder = sellerProductUpdateModel.CanHaveOrder;
                 product.ProducePrice = sellerProductUpdateModel.ProducePrice;
                 product.ProduceDuration = sellerProductUpdateModel.ProduceDuration;
                 product.Count = sellerProductUpdateModel.Count;
@@ -991,15 +994,63 @@ namespace HandCarftBaseServer.Controllers
                 _repository.Product.Update(product);
                 _repository.Save();
 
-                return NoContent();
+                _logger.LogData(MethodBase.GetCurrentMethod(), General.Results_.SuccessMessage(), null, sellerProductUpdateModel);
+                return Ok(General.Results_.SuccessMessage());
 
 
             }
             catch (Exception e)
             {
 
-                _logger.LogError(e, e.Message);
-                return BadRequest("Internal server error");
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), sellerProductUpdateModel);
+                return BadRequest(e.Message);
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("Product/GetProductByIdForSeller")]
+        public IActionResult GetProductByIdForSeller(long productId)
+        {
+
+            try
+            {
+                var product = _repository.Product.FindByCondition(c => c.Id.Equals(productId))
+                    .Include(c => c.CatProduct)
+                    .Select(c => new
+                    {
+                        c.Id,
+                        c.Name,
+                        CatProductName = c.CatProduct.Name,
+                        c.FinalStatusId,
+                        c.Coding,
+                        c.Count,
+                        c.Price,
+                        c.Weight,
+                        c.ProduceDuration,
+                        c.ProducePrice,
+
+
+                    }).FirstOrDefault();
+                if (product == null)
+                {
+                    throw new BusinessException(XError.GetDataErrors.NotFound());
+
+                }
+
+                var imageList = _repository.ProductImage
+                    .FindByCondition(c => c.ProductId == productId && c.DaDate == null && c.Ddate == null).ToList();
+                var finalres = new { Product = product, ImageList = imageList };
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, productId);
+                return Ok(finalres);
+
+
+            }
+            catch (Exception e)
+            {
+
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), productId);
+                return BadRequest(e.Message);
             }
         }
 

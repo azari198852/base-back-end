@@ -23,6 +23,8 @@ namespace Entities.Models
         public double? UsageValue { get; set; }
         public long? MaximumUsagePrice { get; set; }
         public int? UsedCount { get; set; }
+        public string Description { get; set; }
+        public bool? HaveTimer { get; set; }
         public long? CuserId { get; set; }
         public long? Cdate { get; set; }
         public long? DuserId { get; set; }

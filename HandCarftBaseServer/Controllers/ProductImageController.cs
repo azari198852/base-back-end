@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using AutoMapper;
 using Contracts;
@@ -8,6 +9,7 @@ using Entities.DataTransferObjects;
 using Entities.Models;
 using Entities.UIResponse;
 using HandCarftBaseServer.Tools;
+using Logger;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +23,8 @@ namespace HandCarftBaseServer.Controllers
 
         private readonly IMapper _mapper;
         private readonly IRepositoryWrapper _repository;
+        private readonly ILogHandler _logger;
+
 
         public ProductImageController(IMapper mapper, IRepositoryWrapper repository)
         {
@@ -28,6 +32,9 @@ namespace HandCarftBaseServer.Controllers
             _repository = repository;
         }
 
+        /// <summary>
+        ///عکس های مربوط به محصول 
+        /// </summary>
         [HttpGet]
         [Route("ProductImage/GetImageListByProductId")]
         public IActionResult GetImageListByProductId(long productId)
@@ -35,12 +42,15 @@ namespace HandCarftBaseServer.Controllers
             try
             {
 
-                return Ok(_repository.ProductImage
-                    .FindByCondition(c => c.ProductId == productId && c.Ddate == null && c.DaDate == null).ToList());
+                var res = _repository.ProductImage
+                    .FindByCondition(c => c.ProductId == productId && c.Ddate == null && c.DaDate == null).ToList();
+                _logger.LogData(MethodBase.GetCurrentMethod(), res, null);
+                return Ok(res);
             }
             catch (Exception e)
             {
-                return BadRequest("");
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
+                return BadRequest(e.Message);
             }
         }
 

@@ -13,5 +13,11 @@ namespace Repository
            : base(repositoryContext)
        {
        }
-    }
+
+       public long GetSellerIdByUserId(long userId)
+       {
+
+           return RepositoryContext.Seller.Find(userId).Id;
+       }
+   }
 }

@@ -63,6 +63,7 @@ namespace Contracts
         ISellerDocumentRepository SellerDocument { get; }
         IWorkRepository Work { get; }
         ISellerAddressRepository SellerAddress { get; }
+        IProductOfferRepository ProductOffer { get; }
         void Save();
     }
 }
