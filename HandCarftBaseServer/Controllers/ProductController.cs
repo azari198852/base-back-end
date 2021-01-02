@@ -958,7 +958,7 @@ namespace HandCarftBaseServer.Controllers
                         c.Weight,
                         c.ProduceDuration,
                         c.ProducePrice,
-
+                        c.CoverImageUrl
 
                     })
                     .ToList());
