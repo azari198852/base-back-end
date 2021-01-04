@@ -425,7 +425,55 @@ namespace HandCarftBaseServer.Controllers
 
         }
 
+        /// <summary>
+        /// لیست محصولات براساس کد فروشنده و نام محصول  
+        /// </summary>
+        [HttpGet]
+        [Route("Product/GetProductListFilterBySeller_Name")]
+        public IActionResult GetProductById(long? sellerId, string productName)
+        {
+            try
+            {
+                var result = _repository.Product.FindByCondition(c => c.Ddate == null && c.DaDate == null && (c.SellerId == sellerId || sellerId == null) && (c.Name.Contains(productName) || string.IsNullOrWhiteSpace(productName))).Select(c => new { c.Id, c.Name, }).ToList();
+                _logger.LogData(MethodBase.GetCurrentMethod(), result, null, sellerId, productName);
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), sellerId, productName);
+                return BadRequest(e.Message);
+            }
 
+        }
+
+        /// <summary>
+        /// لیست محصولات براساس فیلترها  
+        /// </summary>
+        [HttpGet]
+        [Route("Product/GetProductListByFilter")]
+        public IActionResult GetProductListByFilter(GetProductListByFilterParams filter)
+        {
+            try
+            {
+                var result = _repository.Product.FindByCondition(c => c.Ddate == null && c.DaDate == null &&
+                                                                      (filter.CatProductIds.Contains(c.CatProductId.Value) || filter.CatProductIds.Count == 0) &&
+                                                                      (filter.SellerIds.Contains(c.SellerId.Value) || filter.SellerIds.Count == 0) &&
+                                                                      (filter.ProductIds.Contains(c.Id) || filter.ProductIds.Count == 0) &&
+                                                                      (filter.FromPrice <= c.Price || filter.FromPrice == null) &&
+                                                                      (filter.ToPrice >= c.Price || filter.ToPrice == null))
+                                                                      .Include(c => c.CatProduct).Include(c => c.Seller)
+                                                                      .Select(c => new { c.Id, c.Name, c.Coding, c.Count, CatProduct = c.CatProduct.Name, Seller = c.Seller.Name + " " + c.Seller.Fname })
+                                                                      .OrderByDescending(c => c.Id).AsNoTracking().ToList();
+                _logger.LogData(MethodBase.GetCurrentMethod(), result, null, filter);
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), filter);
+                return BadRequest(e.Message);
+            }
+
+        }
 
 
         #region UI_Methods
@@ -610,11 +658,13 @@ namespace HandCarftBaseServer.Controllers
                 var result = _mapper.Map<List<ProductDto>>(res);
 
                 var finalresult = ListResult<ProductDto>.GetSuccessfulResult(result);
+                _logger.LogData(MethodBase.GetCurrentMethod(), finalresult, null);
                 return finalresult;
 
             }
             catch (Exception e)
             {
+                _logger.LogError(e, MethodBase.GetCurrentMethod());
                 return ListResult<ProductDto>.GetFailResult(null);
 
             }
@@ -958,7 +1008,7 @@ namespace HandCarftBaseServer.Controllers
                         c.Weight,
                         c.ProduceDuration,
                         c.ProducePrice,
-
+                        c.CoverImageUrl
 
                     })
                     .ToList());
