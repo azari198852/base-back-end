@@ -74,6 +74,7 @@ namespace Entities
         public virtual DbSet<RoleFormsApi> RoleFormsApi { get; set; }
         public virtual DbSet<Seller> Seller { get; set; }
         public virtual DbSet<SellerAddress> SellerAddress { get; set; }
+        public virtual DbSet<SellerCatProduct> SellerCatProduct { get; set; }
         public virtual DbSet<SellerDocument> SellerDocument { get; set; }
         public virtual DbSet<SellerStatusLog> SellerStatusLog { get; set; }
         public virtual DbSet<Slider> Slider { get; set; }
@@ -2225,6 +2226,48 @@ namespace Entities
                     .WithMany(p => p.SellerAddress)
                     .HasForeignKey(d => d.SellerId)
                     .HasConstraintName("FK_SellerAddress_Seller");
+            });
+
+            modelBuilder.Entity<SellerCatProduct>(entity =>
+            {
+                entity.ToTable("SellerCatProduct", "dbo");
+
+                entity.Property(e => e.Id).HasColumnName("ID");
+
+                entity.Property(e => e.CatProductId).HasColumnName("CatProductID");
+
+                entity.Property(e => e.Cdate).HasColumnName("CDate");
+
+                entity.Property(e => e.CuserId).HasColumnName("CUserID");
+
+                entity.Property(e => e.DaUserId).HasColumnName("DaUserID");
+
+                entity.Property(e => e.Ddate).HasColumnName("DDate");
+
+                entity.Property(e => e.DuserId).HasColumnName("DUserID");
+
+                entity.Property(e => e.FinalStatusId).HasColumnName("FinalStatusID");
+
+                entity.Property(e => e.Mdate).HasColumnName("MDate");
+
+                entity.Property(e => e.MuserId).HasColumnName("MUserID");
+
+                entity.Property(e => e.SellerId).HasColumnName("SellerID");
+
+                entity.HasOne(d => d.CatProduct)
+                    .WithMany(p => p.SellerCatProduct)
+                    .HasForeignKey(d => d.CatProductId)
+                    .HasConstraintName("FK_SellerCatProduct_CatProduct");
+
+                entity.HasOne(d => d.FinalStatus)
+                    .WithMany(p => p.SellerCatProduct)
+                    .HasForeignKey(d => d.FinalStatusId)
+                    .HasConstraintName("FK_SellerCatProduct_Status");
+
+                entity.HasOne(d => d.Seller)
+                    .WithMany(p => p.SellerCatProduct)
+                    .HasForeignKey(d => d.SellerId)
+                    .HasConstraintName("FK_SellerCatProduct_Seller");
             });
 
             modelBuilder.Entity<SellerDocument>(entity =>

@@ -65,9 +65,9 @@ namespace HandCarftBaseServer.Controllers
                         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                         new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
                         new Claim("Id", user.Id.ToString()),
-                        new Claim("FullName", user.FullName),
+                        new Claim("FullName", user.FullName??""),
                         new Claim("UserName", user.Username),
-                        new Claim("Email", user.Email),
+                        new Claim("Email", user.Email??""),
                         new Claim("role", roleId.ToString())
                     };
 
@@ -839,7 +839,7 @@ namespace HandCarftBaseServer.Controllers
                             UserId = user.Id,
                             Mobile = mobileNo,
                             Cdate = DateTime.Now.Ticks,
-                         
+
                         };
                         _repository.Seller.Create(seller);
 
@@ -1307,13 +1307,13 @@ namespace HandCarftBaseServer.Controllers
                     var finalres = LongResult.GetSingleSuccessfulResult(seller.Id);
                     _logger.LogData(MethodBase.GetCurrentMethod(), finalres, null, input);
                     return finalres;
-               
+
                 }
 
                 var res = LongResult.GetFailResult("برای این شماره موبایل قبلا ثبت نام انجام شد است");
                 _logger.LogData(MethodBase.GetCurrentMethod(), res, null, input);
                 return res;
-              
+
             }
             catch (Exception e)
             {

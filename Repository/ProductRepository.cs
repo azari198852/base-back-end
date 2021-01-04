@@ -18,16 +18,15 @@ namespace Repository
 
         }
 
-        public List<Product> GetProductListFullInfo()
+        public IQueryable<Product> GetProductListFullInfo()
         {
-            return FindByCondition(c => c.Ddate == null && c.DaDate == null)
+            var res = FindByCondition(c => c.Ddate == null && c.DaDate == null)
                   .Include(c => c.CatProduct)
                   .Include(c => c.FinalStatus)
                   .Include(c => c.Seller)
                   .Include(c => c.ProductCustomerRate)
-                  .Include(c => c.ProductOffer).ThenInclude(c => c.Offer)
-                  .ToList();
-
+                  .Include(c => c.ProductOffer).ThenInclude(c => c.Offer).AsQueryable();
+            return res;
 
         }
 

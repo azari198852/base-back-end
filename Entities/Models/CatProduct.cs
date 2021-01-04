@@ -12,6 +12,7 @@ namespace Entities.Models
             CatProductParameters = new HashSet<CatProductParameters>();
             InverseP = new HashSet<CatProduct>();
             Product = new HashSet<Product>();
+            SellerCatProduct = new HashSet<SellerCatProduct>();
         }
 
         public long Id { get; set; }
@@ -39,5 +40,6 @@ namespace Entities.Models
         public virtual ICollection<CatProductParameters> CatProductParameters { get; set; }
         public virtual ICollection<CatProduct> InverseP { get; set; }
         public virtual ICollection<Product> Product { get; set; }
+        public virtual ICollection<SellerCatProduct> SellerCatProduct { get; set; }
     }
 }

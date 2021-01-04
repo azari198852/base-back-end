@@ -194,6 +194,40 @@ namespace HandCarftBaseServer.Controllers
             }
         }
 
+        /// <summary>
+        /// لیست فروشندها براساس دسته بندی محصولات  
+        /// </summary>
+
+        [HttpGet]
+        [Route("Seller/GetSellerListByCatProduct")]
+        public IActionResult GetSellerListByCatProduct(List<long> catProductsIds)
+        {
+            try
+            {
+                if (catProductsIds.Count == 0)
+                {
+
+                    var res = _repository.Seller.FindByCondition(c => c.DaDate == null && c.Ddate == null)
+                        .Select(c => new { c.Id, c.Name, c.Fname, c.SellerCode }).ToList();
+                    _logger.LogData(MethodBase.GetCurrentMethod(), res, null, catProductsIds);
+                    return Ok(res);
+                }
+
+                var ress = _repository.SellerCatProduct.FindByCondition(c => catProductsIds.Contains(c.CatProductId.Value))
+                    .Include(c => c.Seller)
+                    .Select(c => new { c.Seller.Id, c.Seller.Name, c.Seller.Fname, c.Seller.SellerCode }).ToList();
+                _logger.LogData(MethodBase.GetCurrentMethod(), ress, null, catProductsIds);
+                return Ok(ress);
+
+
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, MethodBase.GetCurrentMethod(), catProductsIds);
+                return BadRequest(e.Message);
+            }
+        }
+
 
         #region UI_Methods
 

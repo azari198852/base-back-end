@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Logger
 {
-    public class LogHandler: ILogHandler
+    public class LogHandler : ILogHandler
     {
         private readonly Log_DBContext _repoContext;
 
@@ -85,7 +85,7 @@ namespace Logger
             }
             catch (Exception e)
             {
-             
+
                 try
                 {
                     if (serviceMethodInfo.DeclaringType is { })
@@ -98,7 +98,7 @@ namespace Logger
                             ServiceMethodName = serviceMethodInfo.Name,
                             ServiceParameters = JsonConvert.SerializeObject(serviceParameterValues)
                         };
-                 
+
                         _repoContext.SystemErrorLogs.Add(log);
                     }
 
@@ -115,7 +115,7 @@ namespace Logger
         {
             try
             {
-                var log = new OperationLog {Answer = answer == null ? null : JsonConvert.SerializeObject(answer)};
+                var log = new OperationLog { Answer = answer == null ? null : System.Text.Json.JsonSerializer.Serialize(answer) };
                 if (answer != null)
                 {
                     object answerObj;
@@ -129,7 +129,7 @@ namespace Logger
                     }
                     else
                         answerObj = answer;
-                    log.Answer = JsonConvert.SerializeObject(answerObj);
+                    log.Answer = System.Text.Json.JsonSerializer.Serialize(answerObj);
                 }
                 log.CreateDateTime = DateTime.Now;
                 log.ExecuteTime = executeTime == null ? null : executeTime.ToString();
@@ -229,7 +229,7 @@ namespace Logger
             }
         }
 
-        private  string SerializeParameters(ParameterInfo[] parameterNames, object[] parameterValues, MemberInfo methodInfo)
+        private string SerializeParameters(ParameterInfo[] parameterNames, object[] parameterValues, MemberInfo methodInfo)
         {
             try
             {

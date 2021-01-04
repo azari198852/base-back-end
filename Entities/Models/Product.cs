@@ -31,7 +31,6 @@ namespace Entities.Models
         public long? Rkey { get; set; }
         public long? Coding { get; set; }
         public long? Price { get; set; }
-        public bool CanHaveOrder { get; set; }
         public long? ProducePrice { get; set; }
         public long? FinalStatusId { get; set; }
         public long? FirstCount { get; set; }
@@ -55,6 +54,7 @@ namespace Entities.Models
         public string MetaDescription { get; set; }
         public string MetaTitle { get; set; }
         public string CompareDescription { get; set; }
+        public bool? CanHaveOrder { get; set; }
         public int? OredrDuration { get; set; }
         public string DownloadLink { get; set; }
         public bool? VirtualProduct { get; set; }

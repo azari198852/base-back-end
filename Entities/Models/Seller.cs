@@ -10,6 +10,7 @@ namespace Entities.Models
             CustomerOrderProduct = new HashSet<CustomerOrderProduct>();
             Product = new HashSet<Product>();
             SellerAddress = new HashSet<SellerAddress>();
+            SellerCatProduct = new HashSet<SellerCatProduct>();
             SellerDocument = new HashSet<SellerDocument>();
             SellerStatusLog = new HashSet<SellerStatusLog>();
         }
@@ -52,6 +53,7 @@ namespace Entities.Models
         public virtual ICollection<CustomerOrderProduct> CustomerOrderProduct { get; set; }
         public virtual ICollection<Product> Product { get; set; }
         public virtual ICollection<SellerAddress> SellerAddress { get; set; }
+        public virtual ICollection<SellerCatProduct> SellerCatProduct { get; set; }
         public virtual ICollection<SellerDocument> SellerDocument { get; set; }
         public virtual ICollection<SellerStatusLog> SellerStatusLog { get; set; }
     }
