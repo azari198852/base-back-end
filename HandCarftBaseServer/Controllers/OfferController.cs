@@ -128,6 +128,8 @@ namespace HandCarftBaseServer.Controllers
                 offer.DaDate ??= DateTime.Now.Ticks;
                 if (offer.DaDate != null)
                     offer.DaDate = null;
+                _repository.Offer.Update(offer);
+                _repository.Save();
                 _logger.LogData(MethodBase.GetCurrentMethod(), General.Results_.SuccessMessage(), null, offerId);
                 return Ok(General.Results_.SuccessMessage());
 
